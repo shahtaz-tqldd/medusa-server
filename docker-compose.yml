@@ -1,0 +1,42 @@
+version: '3.9'
+
+services:
+  web:
+    build: .
+    container_name: medusa_app
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - .:/app
+      - static_volume:/app/staticfiles
+    ports:
+      - "5000:5000"
+    depends_on:
+      - db
+    networks:
+      - medusa_network
+    command: gunicorn your_project.wsgi:application --bind 0.0.0.0:5000
+
+  db:
+    image: postgres:17
+    container_name: medusa_pgdb
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - medusa_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PGDB_USER} -d ${PGDB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+  static_volume:
+
+networks:
+  medusa_network:
+    external: true
