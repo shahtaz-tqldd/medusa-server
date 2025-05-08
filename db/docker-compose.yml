@@ -1,0 +1,30 @@
+services:
+  db:
+    image: postgres:16
+    container_name: medusa_db
+    restart: always
+    ports:
+      - 5431:5432
+    environment:
+      POSTGRES_DB: medusa_db
+      POSTGRES_USER: medusa_db_owner
+      POSTGRES_PASSWORD: cleanC0de_myth
+      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256"
+    command: |
+      postgres
+      -c wal_level=replica
+      -c max_wal_senders=10
+      -c max_replication_slots=10
+      -c hot_standby_feedback=on
+    volumes:
+      - medusa_db_data:/var/lib/postgresql/data
+      - ./00_init.sql:/docker-entrypoint-initdb.d/00_init.sql
+    networks:
+      - medusa_network
+
+networks:
+  medusa_network:
+    external: true
+
+volumes:
+  medusa_db_data:

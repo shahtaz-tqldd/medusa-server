@@ -2,39 +2,17 @@ version: '3.9'
 
 services:
   web:
-    build: .
     container_name: medusa_app
-    restart: unless-stopped
-    env_file: .env
+    build:
+      context: .
+      dockerfile: Dockerfile
     volumes:
       - .:/app
-      - static_volume:/app/staticfiles
     ports:
       - "5000:5000"
-    depends_on:
-      - db
+    restart: always
     networks:
       - medusa_network
-    command: gunicorn your_project.wsgi:application --bind 0.0.0.0:5000
-
-  db:
-    image: postgres:17
-    container_name: medusa_pgdb
-    environment:
-      POSTGRES_USER: ${PGDB_USER}
-      POSTGRES_PASSWORD: ${PGDB_PASSWORD}
-      POSTGRES_DB: ${PGDB_NAME}
-    ports:
-      - "${PGDB_PORT:-5432}:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
-    networks:
-      - medusa_network
-
-volumes:
-  postgres_data:
-  static_volume:
 
 networks:
   medusa_network:

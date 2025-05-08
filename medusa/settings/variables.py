@@ -1,5 +1,8 @@
 import os
+from pathlib import Path
 from dotenv import load_dotenv
+
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 load_dotenv()
 
@@ -8,7 +11,7 @@ DEBUG = os.getenv('APP_ENV') == 'dev'
 
 ALLOWED_HOSTS = [host.strip() for host in (os.getenv('ALLOWED_HOSTS') or '').split(',') if host.strip()]
 
-ROOT_URLCONF = 'app.urls'
+ROOT_URLCONF = 'medusa.urls'
 
 # database
 PGDB_NAME = os.getenv('PGDB_NAME', 'medusa_db')
@@ -25,3 +28,4 @@ USE_TZ = True
 
 #static url
 STATIC_URL = 'static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')

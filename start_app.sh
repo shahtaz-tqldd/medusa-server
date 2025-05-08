@@ -1,52 +1,24 @@
-#!/bin/bash
+#!/bin/sh
+sudo systemctl stop postgresql
 
-# Load environment variables from .env file
-if [ -f .env ]; then
-    export $(grep -v '^#' .env | xargs)
-else
-    echo "Error: .env file not found"
-    exit 1
-fi
+# clean docker
+sudo docker system prune --force
 
-# Function to check if a command exists
-command_exists() {
-    command -v "$1" >/dev/null 2>&1
-}
+# create docker network
+echo "Creating Docker network"
+sudo docker network create medusa_network
 
-# Check for required commands
-for cmd in docker docker-compose; do
-    if ! command_exists "$cmd"; then
-        echo "Error: $cmd is not installed"
-        exit 1
-    fi
-done
+# run the database
+echo "cd into db"
+cd db
+echo "running docker compose for database"
+sudo docker compose build && sudo docker compose up -d
 
-# Clean Docker system
-echo "Cleaning Docker system..."
-docker system prune --force
+echo "cd into base directory"
+cd ..
 
-# Create Docker network if it doesn't exist (now handled by compose)
-echo "Creating Docker network..."
-docker network inspect medusa_network >/dev/null 2>&1 || \
-    docker network create medusa_network
+echo "closing local and dev and prod docker"
+sudo docker compose -f docker-compose.yml down
 
-# Start all services
-echo "Starting containers..."
-docker compose down --volumes --remove-orphans
-docker compose up -d --build
-
-# Wait for PostgreSQL to be ready (using service name instead of container name)
-echo "Waiting for PostgreSQL to be ready..."
-MAX_ATTEMPTS=30
-ATTEMPT=0
-until docker compose exec db pg_isready -U "$PGDB_USER" -d "$PGDB_NAME" >/dev/null 2>&1; do
-    if [ $ATTEMPT -ge $MAX_ATTEMPTS ]; then
-        echo "Error: PostgreSQL did not become ready in time"
-        docker compose logs db
-        exit 1
-    fi
-    ATTEMPT=$((ATTEMPT+1))
-    sleep 2
-done
-
-echo "All services are up and running!"
+echo "running docker compose for webserver"
+sudo docker compose -f docker-compose.yml up --build --remove-orphans

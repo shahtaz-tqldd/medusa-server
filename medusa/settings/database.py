@@ -1,4 +1,4 @@
-from app.settings import (
+from medusa.settings import (
     PGDB_NAME,
     PGDB_USER,
     PGDB_PASSWORD,
