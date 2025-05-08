@@ -11,8 +11,15 @@ THIRD_PARTY_APPS = [
     'rest_framework',
 ]
 
-DEVELOPED_APPS = [
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    )
+}
 
+DEVELOPED_APPS = [
+    'base',
+    'user',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + DEVELOPED_APPS
