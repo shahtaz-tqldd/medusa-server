@@ -33,4 +33,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+AUTH_USER_MODEL = "user.CustomUser"
+
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
