@@ -2,11 +2,11 @@ import random
 from django.core.mail import send_mail
 from rest_framework import generics, permissions
 from rest_framework.status import (
-    HTTP_201_CREATED,
     HTTP_200_OK,
+    HTTP_201_CREATED,
+    HTTP_205_RESET_CONTENT,
     HTTP_404_NOT_FOUND,
     HTTP_409_CONFLICT,
-    HTTP_205_RESET_CONTENT,
 )
 from rest_framework_simplejwt.views import TokenRefreshView
 
@@ -27,7 +27,7 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 
 
-class CreateNewUserView(generics.CreateAPIView):
+class CreateNewUser(generics.CreateAPIView):
     serializer_class = CreateUserSerializer
     permission_classes = [permissions.AllowAny]
 
@@ -43,7 +43,7 @@ class CreateNewUserView(generics.CreateAPIView):
         )
 
 
-class LoginView(generics.GenericAPIView):
+class Login(generics.GenericAPIView):
     serializer_class = LoginSerializer
 
     def post(self, request, *args, **kwargs):
@@ -57,7 +57,7 @@ class LoginView(generics.GenericAPIView):
         )
 
 
-class RefreshTokenView(TokenRefreshView):
+class RefreshToken(TokenRefreshView):
     def post(self, request, *args, **kwargs):
         response = super().post(request, *args, **kwargs)
         token_data = {
@@ -69,7 +69,7 @@ class RefreshTokenView(TokenRefreshView):
         )
 
 
-class UserDetailsView(generics.GenericAPIView):
+class UserDetails(generics.GenericAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = UserDetailsSerializer
 
@@ -82,7 +82,7 @@ class UserDetailsView(generics.GenericAPIView):
         )
 
 
-class UserDetailsUpdateView(generics.UpdateAPIView):
+class UpdateUserDetails(generics.UpdateAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = UserDetailsUpdateSerializer
 
@@ -106,7 +106,7 @@ class UserDetailsUpdateView(generics.UpdateAPIView):
         )
 
 
-class ForgetPasswordView(generics.GenericAPIView):
+class ForgotPassword(generics.GenericAPIView):
     serializer_class = ForgetPasswordSerializer
     permission_classes = [permissions.AllowAny]
 
@@ -137,7 +137,7 @@ class ForgetPasswordView(generics.GenericAPIView):
         return APIResponse.success(message="An OTP has sent to your email!")
 
 
-class ResetPasswordView(generics.GenericAPIView):
+class ResetPassword(generics.GenericAPIView):
     serializer_class = ResetPasswordSerializer
     permission_classes = [permissions.AllowAny]
 

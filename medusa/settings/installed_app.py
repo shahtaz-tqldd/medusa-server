@@ -20,6 +20,8 @@ REST_FRAMEWORK = {
 DEVELOPED_APPS = [
     'base',
     'user',
+    'projects',
+    'blogs',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + DEVELOPED_APPS
