@@ -16,7 +16,9 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'app.wsgi.application'
+WSGI_APPLICATION = 'medusa.wsgi.application'
+
+AUTH_USER_MODEL = "user.CustomUser"
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -33,6 +35,5 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-AUTH_USER_MODEL = "user.CustomUser"
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

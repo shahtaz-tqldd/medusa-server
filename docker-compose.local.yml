@@ -1,0 +1,35 @@
+services:
+  django_wsgi:
+    container_name: medusa_wsgi
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - .:/app
+    ports:
+      - "5000:5000"
+    environment:
+      - PROD=false
+    networks:
+      - medusa-network
+  
+  django_asgi:
+    container_name: medusa_asgi
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - .:/app
+    ports:
+      - "5001:5001"
+    restart: always
+    command: >
+      bash -c "pip install uvicorn[standard] && \
+      uvicorn medusa.asgi:application --host 0.0.0.0 --port 5001 --reload"
+    networks:
+      - medusa-network
+
+
+networks:
+  medusa-network:
+    external: true

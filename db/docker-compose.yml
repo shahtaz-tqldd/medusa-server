@@ -20,11 +20,12 @@ services:
       - medusa_db_data:/var/lib/postgresql/data
       - ./00_init.sql:/docker-entrypoint-initdb.d/00_init.sql
     networks:
-      - medusa_network
+      - medusa-network
 
 networks:
-  medusa_network:
+  medusa-network:
     external: true
 
 volumes:
   medusa_db_data:
+  

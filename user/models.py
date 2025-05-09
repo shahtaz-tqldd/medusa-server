@@ -11,7 +11,6 @@ phone_regex = RegexValidator(
 )
 
 class CustomUser(AbstractUser):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     email = models.EmailField(
         unique=True,
         verbose_name=_("Email Address"),
@@ -57,7 +56,7 @@ class CustomUser(AbstractUser):
         ordering = ["-date_joined"]
 
     def __str__(self):
-        return f"{self.username} ({self.get_role_display()})"
+        return f"{self.username}"
 
     def get_full_name(self):
         return f"{self.first_name} {self.last_name}"

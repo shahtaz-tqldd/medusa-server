@@ -1,28 +1,24 @@
 #!/bin/sh
 
-set -e
-
 # Collect static files
 echo "Collecting static files"
 python manage.py collectstatic --noinput
 
-# Creating database migrations
-echo "Collecting database migrations"
+# First create migrations for user app specifically
+echo "Creating migrations for user app"
+python manage.py makemigrations user
+
+# Then create migrations for other apps
+echo "Creating migrations for other apps"
 python manage.py makemigrations --merge --noinput
 
-# Apply database migrations
-echo "Applying database migrations"
+# Apply user migrations first
+echo "Applying user migrations first"
+python manage.py migrate user --database=default
+
+# Then apply all other migrations
+echo "Applying remaining migrations"
 python manage.py migrate --database=default
 
-# Create superuser if not exists
-echo "Creating superuser"
-python manage.py shell -c "
-from django.contrib.auth import get_user_model;
-User = get_user_model();
-if not User.objects.filter(username='admin').exists():
-    User.objects.create_superuser('admin', 'admin@medusa.com', 'test1234')
-"
-
-# Start ASGI app with Uvicorn
-echo "Starting ASGI app with Uvicorn"
-exec uvicorn medusa.asgi:application --host 0.0.0.0 --port 5000 --reload
+echo "Starting development server"
+python manage.py runserver 0.0.0.0:5000
