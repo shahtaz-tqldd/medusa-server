@@ -1,24 +1,31 @@
 #!/bin/sh
+
+# Stop PostgreSQL service if necessary
+echo "Stopping PostgreSQL service"
 sudo systemctl stop postgresql
 
-# clean docker
+# Clean up Docker system
+echo "Cleaning up Docker system"
 sudo docker system prune --force
 
-# create docker network
+# Create Docker network
 echo "Creating Docker network"
 sudo docker network create medusa-network
 
-# run the database
-echo "cd into db"
+# Run the database
+echo "Changing directory to db"
 cd db
-echo "running docker compose for database"
+echo "Building and running Docker compose for database"
 sudo docker compose build && sudo docker compose up -d
 
-echo "cd into base directory"
+# Change back to the base directory
+echo "Changing back to the base directory"
 cd ..
 
-echo "closing local and dev and prod docker"
-sudo docker compose -f docker-compose.local.yml down
+# Stop and remove any existing dev and prod Docker containers
+echo "Stopping and removing existing Docker containers"
+sudo docker compose -f docker-compose.dev.yml down
 
-echo "running docker compose for webserver"
-sudo docker compose -f docker-compose.local.yml up --build --remove-orphans
+# Build and run Docker compose for the web server
+echo "Building and running Docker compose for web server"
+sudo docker compose -f docker-compose.dev.yml up --build --remove-orphans

@@ -1,0 +1,22 @@
+services:
+  medusa_app:
+    image: medusa-app
+    container_name: medusa-app
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - .:/app
+    ports:
+      - "5000:5000"
+    restart: always
+    command: >
+      bash -c "pip install uvicorn[standard] && \
+      uvicorn medusa.asgi:application --host 0.0.0.0 --port 5000 --reload"
+    networks:
+      - medusa-network
+
+
+networks:
+  medusa-network:
+    external: true

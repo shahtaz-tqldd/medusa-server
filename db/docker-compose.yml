@@ -1,14 +1,15 @@
 services:
-  db:
+  medusa_db:
     image: postgres:16
-    container_name: medusa_db
+    container_name: medusa-db
     restart: always
     ports:
       - 5431:5432
     environment:
-      POSTGRES_DB: medusa_db
-      POSTGRES_USER: medusa_db_owner
+      POSTGRES_DB: medusa
+      POSTGRES_USER: hadron
       POSTGRES_PASSWORD: cleanC0de_myth
+      PGDB_HOST: db
       POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256"
     command: |
       postgres
@@ -20,12 +21,12 @@ services:
       - medusa_db_data:/var/lib/postgresql/data
       - ./00_init.sql:/docker-entrypoint-initdb.d/00_init.sql
     networks:
-      - medusa-network
-
+      medusa-network:
+        aliases:
+          - db
 networks:
   medusa-network:
     external: true
-
 volumes:
   medusa_db_data:
   

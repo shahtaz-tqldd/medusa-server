@@ -1,11 +1,13 @@
-from rest_framework import serializers
-from user.models import CustomUser
-from django.contrib.auth.password_validation import validate_password
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.contrib.auth import authenticate
-from rest_framework_simplejwt.tokens import RefreshToken
-from base.helpers.func import extra_kwargs_constructor
+from django.contrib.auth.password_validation import validate_password
 
+from rest_framework import serializers
+from rest_framework_simplejwt.tokens import RefreshToken
+
+from user.models import CustomUser
+from base.helpers.func import extra_kwargs_constructor
 
 class CreateUserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(
@@ -15,9 +17,10 @@ class CreateUserSerializer(serializers.ModelSerializer):
         write_only=True, required=True, style={"input_type": "password"}
     )
 
+    secret_key = serializers.CharField(write_only=True, required=True)
     class Meta:
         model = CustomUser
-        fields = ["email", "password", "password_confirm", "first_name", "last_name"]
+        fields = ["email", "password", "password_confirm", "first_name", "last_name", "phone", "address", "secret_key"]
 
         extra_kwargs = extra_kwargs_constructor(
             "phone",
@@ -25,6 +28,9 @@ class CreateUserSerializer(serializers.ModelSerializer):
         )
 
     def validate(self, data):
+        if data.get("secret_key") != settings.USER_CREATE_SECRET:
+            raise serializers.ValidationError({"secret_key": "Invalid Secret Key!"})
+        
         if data["password"] != data["password_confirm"]:
             raise serializers.ValidationError(
                 {"password_confirm": "Password do not match!"}
@@ -40,6 +46,7 @@ class CreateUserSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         validated_data.pop("password_confirm")
+        validated_data.pop("secret_key")
         password = validated_data.pop("password")
         user = CustomUser(**validated_data)
         user.set_password(password)
@@ -94,23 +101,9 @@ class UserDetailsSerializer(serializers.ModelSerializer):
             "email",
             "phone",
             "address",
-            "profile_picture_url",
-            "date_of_birth",
+            "picture_url"
         ]
 
     def get_fullname(self, obj):
         return obj.get_full_name()
-
-
-class UserDetailsUpdateSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = CustomUser
-        fields = [
-            "first_name",
-            "last_name",
-            "phone",
-            "address",
-            "profile_picture_url",
-            "date_of_birth",
-        ]
 

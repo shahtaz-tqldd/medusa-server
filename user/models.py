@@ -40,12 +40,13 @@ class CustomUser(AbstractUser):
 
     # Address fields
     address = models.CharField(
-        max_length=100, blank=True, null=True, verbose_name=_("Address Line 1")
+        max_length=100, blank=True, null=True, verbose_name=_("Address")
     )
 
     picture_url = models.URLField(
         blank=True, null=True, verbose_name=_("Profile Picture URL")
     )
+    created_at = models.DateTimeField(auto_now_add=True)
 
     USERNAME_FIELD = "username"
     REQUIRED_FIELDS = ["email", "first_name", "last_name"]
@@ -53,7 +54,7 @@ class CustomUser(AbstractUser):
     class Meta:
         verbose_name = _("User")
         verbose_name_plural = _("Users")
-        ordering = ["-date_joined"]
+        ordering = ["-created_at"]
 
     def __str__(self):
         return f"{self.username}"

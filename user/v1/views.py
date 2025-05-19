@@ -1,14 +1,15 @@
 import random
 from django.core.mail import send_mail
+from django.contrib.auth import get_user_model
+
 from rest_framework import generics, permissions
+from rest_framework_simplejwt.views import TokenRefreshView
 from rest_framework.status import (
-    HTTP_200_OK,
     HTTP_201_CREATED,
     HTTP_205_RESET_CONTENT,
     HTTP_404_NOT_FOUND,
     HTTP_409_CONFLICT,
 )
-from rest_framework_simplejwt.views import TokenRefreshView
 
 from base.helpers.response import APIResponse
 
@@ -16,18 +17,28 @@ from user.models import PasswordResetOTP
 from user.v1.serializers import (
     CreateUserSerializer,
     LoginSerializer,
-    UserDetailsUpdateSerializer,
     ForgetPasswordSerializer,
     ResetPasswordSerializer,
     UserDetailsSerializer,
 )
 
-from django.contrib.auth import get_user_model
+from user.v1.res_msg import (
+    USER_REGISTER,
+    USER_LOGIN,
+    USER_TOKEN_REFRESH,
+    USER_DETAILS,
+    USER_UPDATE,
+    USER_FORGOT_PASSWORD,
+    USER_RESET_PASSWORD
+)
 
 User = get_user_model()
 
-
 class CreateNewUser(generics.CreateAPIView):
+    """
+    APIView to create New User with secret api key
+    """
+    RESPONSE_LANGUAGE = "en"
     serializer_class = CreateUserSerializer
     permission_classes = [permissions.AllowAny]
 
@@ -39,11 +50,17 @@ class CreateNewUser(generics.CreateAPIView):
         user_data = UserDetailsSerializer(user).data
 
         return APIResponse.success(
-            data=user_data, message="New User Created!", status=HTTP_201_CREATED
+            data = user_data, 
+            message = USER_REGISTER[self.RESPONSE_LANGUAGE], 
+            status = HTTP_201_CREATED
         )
 
 
 class Login(generics.GenericAPIView):
+    """
+    API view to login with email and password
+    """
+    RESPONSE_LANGUAGE = "en"
     serializer_class = LoginSerializer
 
     def post(self, request, *args, **kwargs):
@@ -51,25 +68,33 @@ class Login(generics.GenericAPIView):
         serializer.is_valid(raise_exception=True)
 
         return APIResponse.success(
-            data=serializer.validated_data,
-            message="User logged in!",
-            status=HTTP_200_OK,
+            data = serializer.validated_data,
+            message = USER_LOGIN[self.RESPONSE_LANGUAGE],
         )
 
 
 class RefreshToken(TokenRefreshView):
+    """
+    API view to refresh JWT access token
+    """
+    RESPONSE_LANGUAGE = "en"
     def post(self, request, *args, **kwargs):
         response = super().post(request, *args, **kwargs)
         token_data = {
             "access_token": response.data.get("access"),
-            "refresh_token": response.data.get("refresh"),
         }
+
         return APIResponse.success(
-            data=token_data, status=HTTP_200_OK, message="Token refreshed success!"
+            data = token_data, 
+            message = USER_TOKEN_REFRESH[self.RESPONSE_LANGUAGE], 
         )
 
 
 class UserDetails(generics.GenericAPIView):
+    """
+    API View to fetch user details
+    """
+    RESPONSE_LANGUAGE = "en"
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = UserDetailsSerializer
 
@@ -78,13 +103,18 @@ class UserDetails(generics.GenericAPIView):
         serializer = self.get_serializer(user)
 
         return APIResponse.success(
-            data=serializer.data, message="User details retrieved!"
+            data=serializer.data, 
+            message = USER_DETAILS[self.RESPONSE_LANGUAGE], 
         )
 
 
 class UpdateUserDetails(generics.UpdateAPIView):
+    """
+    API view to update user details
+    """
+    RESPONSE_LANGUAGE = "en"
     permission_classes = [permissions.IsAuthenticated]
-    serializer_class = UserDetailsUpdateSerializer
+    serializer_class = UserDetailsSerializer
 
     http_method_names = ["patch"]
 
@@ -101,12 +131,16 @@ class UpdateUserDetails(generics.UpdateAPIView):
 
         return APIResponse.success(
             data=serializer.data,
-            message="User updated successfully!",
+            message = USER_UPDATE[self.RESPONSE_LANGUAGE], 
             status=HTTP_205_RESET_CONTENT,
         )
 
 
 class ForgotPassword(generics.GenericAPIView):
+    """
+    API view to receive request for forget password and send otp to email
+    """
+    RESPONSE_LANGUAGE = "en"
     serializer_class = ForgetPasswordSerializer
     permission_classes = [permissions.AllowAny]
 
@@ -134,10 +168,14 @@ class ForgotPassword(generics.GenericAPIView):
             fail_silently=False,
         )
 
-        return APIResponse.success(message="An OTP has sent to your email!")
+        return APIResponse.success(message = USER_FORGOT_PASSWORD[self.RESPONSE_LANGUAGE])
 
 
 class ResetPassword(generics.GenericAPIView):
+    """
+    API view to reset password with otp
+    """
+    RESPONSE_LANGUAGE = "en"
     serializer_class = ResetPasswordSerializer
     permission_classes = [permissions.AllowAny]
 
@@ -171,4 +209,4 @@ class ResetPassword(generics.GenericAPIView):
 
         otp_entry.delete()
 
-        return APIResponse.success(message="Password reset successfully")
+        return APIResponse.success(message = USER_RESET_PASSWORD[self.RESPONSE_LANGUAGE])
