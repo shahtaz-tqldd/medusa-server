@@ -49,4 +49,4 @@ USER_CREATE_SECRET = os.getenv('USER_CREATE_SECRET')
 
 #static url
 STATIC_URL = '/static/'
-# STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+STATIC_ROOT = BASE_DIR / "staticfiles"

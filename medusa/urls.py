@@ -10,6 +10,5 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('auth/', include('user.v1.urls')),
     path('base/', include('base.v1.urls')),
-] 
-
-# + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+    path('projects/', include('projects.v1.urls')),
+] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
