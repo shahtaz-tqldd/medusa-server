@@ -28,6 +28,7 @@ This is a medusa backend server developed with python and django with django res
 `cd start_app.bat` for windows, make sure you have docker desktop running
 
 
-** migrations cleanup command **
-find . -path "*/migrations/*.pyc"  -delete
-find . -path "*/migrations/*.py" -not -name "__init__.py" -delete
+1. authentication - compelte
+2. projects - complete
+3. service
+4. skills

@@ -11,6 +11,7 @@ phone_regex = RegexValidator(
 )
 
 class CustomUser(AbstractUser):
+    id = models.CharField(max_length=255, default=uuid.uuid4, unique=True, editable=False, primary_key=True)
     email = models.EmailField(
         unique=True,
         verbose_name=_("Email Address"),

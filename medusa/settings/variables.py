@@ -50,3 +50,7 @@ USER_CREATE_SECRET = os.getenv('USER_CREATE_SECRET')
 #static url
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / "staticfiles"
+
+# media url
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR, 'media'

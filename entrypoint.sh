@@ -2,7 +2,7 @@
 
 # Collect static files
 echo "Collecting static files"
-python manage.py collectstatic --noinput
+python manage.py collectstatic
 
 # First create migrations for user specifically
 echo "Creating migrations for user"

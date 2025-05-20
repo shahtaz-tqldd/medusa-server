@@ -1,9 +1,11 @@
+import uuid
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from projects.choices import ProjectTypeChoices
 
 
 class Project(models.Model):
+    id = models.CharField(max_length=255, default=uuid.uuid4, unique=True, editable=False, primary_key=True)
     name = models.CharField(max_length=255)
     description = models.TextField()
     features = models.TextField()
@@ -20,6 +22,7 @@ class Project(models.Model):
     github = models.URLField(blank=True, null=True, verbose_name=_("Github URL"))
 
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.name
@@ -31,6 +34,7 @@ class Project(models.Model):
 
 
 class ProjectImage(models.Model):
+    id = models.CharField(max_length=255, default=uuid.uuid4, unique=True, editable=False, primary_key=True)
     project = models.ForeignKey(
         Project, on_delete=models.CASCADE, related_name="images"
     )
