@@ -8,7 +8,7 @@ from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.permissions import IsAuthenticated, AllowAny
 
 # models
-from blogs.models import Blog, ContentBlock, Category
+from blogs.models import Blog, ContentBlock, Category, Tag
 
 # serializers
 from blogs.v1.serializers import (
@@ -53,7 +53,6 @@ class CreateNewBlog(generics.CreateAPIView):
             message=res_msg.BLOG_CREATED[self.RES_LANG],
             status=status.HTTP_201_CREATED
         )
-
 
 
 class BlogList(generics.ListAPIView):
@@ -176,7 +175,6 @@ class UpdateBlogDetails(generics.UpdateAPIView):
         return self.update(request, *args, **kwargs)
 
 
-
 class DeleteBlog(generics.DestroyAPIView):
     """
     API View to delete blog with id
@@ -293,6 +291,90 @@ class DeleteCategory(generics.DestroyAPIView):
 
         return APIResponse.success(
             message=res_msg.CATEGORY_DELETED[self.RES_LANG],
+            status=status.HTTP_204_NO_CONTENT
+        )
+    
+
+# -------------
+# Tags
+# -------------
+class CreateNewTag(generics.CreateAPIView):
+    """
+    API View to create new tag
+    """
+    RES_LANG = 'en'
+    serializer_class = TagSerializer
+    permission_classes = [IsAuthenticated]
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return APIResponse.success(
+            data=serializer.data, 
+            message=res_msg.TAG_CREATED[self.RES_LANG],
+            status=status.HTTP_201_CREATED
+        )
+    
+
+class TagList(generics.ListAPIView):
+    """
+    API View to get tag list
+    """
+    RES_LANG = 'en'
+    serializer_class = TagSerializer
+    queryset = Tag.objects.all()
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+
+        return APIResponse.success(
+            data=serializer.data, 
+            message=res_msg.TAG_LIST[self.RES_LANG]
+        )
+    
+    
+class UpdateTag(generics.UpdateAPIView):
+    """
+    API View to update tag with id
+    """
+    RES_LANG = 'en'
+    ermission_classes = [IsAuthenticated]
+    serializer_class = TagSerializer
+    queryset = Tag.objects.all()
+    lookup_field = 'id'
+    http_method_names = ["patch"]
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+
+        return APIResponse.success(
+            data=serializer.data, 
+            message=res_msg.TAG_UPDATED[self.RES_LANG],
+            status=status.HTTP_205_RESET_CONTENT
+        )
+    
+    
+class DeleteTag(generics.DestroyAPIView):
+    """
+    API View to delete tag with id
+    """
+    RES_LANG = 'en'
+    ermission_classes = [IsAuthenticated]
+    queryset = Tag.objects.all()
+    lookup_field = 'id'
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        self.perform_destroy(instance)
+
+        return APIResponse.success(
+            message=res_msg.TAG_DELETED[self.RES_LANG],
             status=status.HTTP_204_NO_CONTENT
         )
     

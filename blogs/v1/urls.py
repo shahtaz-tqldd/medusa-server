@@ -9,6 +9,10 @@ from .views import (
     CreateNewCategory,
     UpdateCategory,
     DeleteCategory,
+    TagList,
+    CreateNewTag,
+    UpdateTag,
+    DeleteTag,
 )
 
 app_name = 'blogs'
@@ -20,6 +24,13 @@ category_urls = [
     path("delete/<id>/", DeleteCategory.as_view(), name="delete-category"),
 ]
 
+tags_urls = [
+    path("list/", TagList.as_view(), name="tag-list"),
+    path("create/", CreateNewTag.as_view(), name="create-tag"),
+    path("update/<id>/", UpdateTag.as_view(), name="update-tag"),
+    path("delete/<id>/", DeleteTag.as_view(), name="delete-tag"),
+]
+
 blog_urls = [
     path("list/", BlogList.as_view(), name="blog-list"),
     path("create/", CreateNewBlog.as_view(), name="create-blog"),
@@ -28,4 +39,7 @@ blog_urls = [
     path("delete/<id>/", DeleteBlog.as_view(), name="delete-blog"),
 ]
 
-urlpatterns = blog_urls + [path('categories/', include(category_urls))] 
+urlpatterns = blog_urls + [
+  path('categories/', include(category_urls)), 
+  path('tags/', include(tags_urls))
+] 

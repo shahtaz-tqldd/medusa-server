@@ -1,5 +1,4 @@
 # blogs
-
 BLOG_CREATED = {
     "en": "New Blog Created!"
 }
@@ -25,7 +24,6 @@ BLOG_NOT_FOUND = {
 }
 
 # category
-
 CATEGORY_CREATED = {
     "en": "New Category Created!"
 }
@@ -44,4 +42,26 @@ CATEGORY_DELETED = {
 
 CATEGORY_NOT_FOUND = {
     "en": "Category not found!"
+}
+
+
+# tag
+TAG_CREATED = {
+    "en": "New Tag Created!"
+}
+
+TAG_LIST = {
+    "en": "Tag List received!"
+}
+
+TAG_UPDATED = {
+    "en": "Tag has been updated!"
+}
+
+TAG_DELETED = {
+    "en": "Tag has been deleted!"
+}
+
+TAG_NOT_FOUND = {
+    "en": "Tag not found!"
 }
