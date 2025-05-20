@@ -1,11 +1,9 @@
-from django.urls import path
-from rest_framework_simplejwt.views import (
-    TokenRefreshView, 
-    TokenVerifyView
-)
-jwt_urls = [
-    path("access/", TokenVerifyView.as_view(), name="token_verify"),
-    path("refresh/", TokenRefreshView.as_view(), name="token_refresh"),
+from django.urls import path, include
+from .views import CreateVisitor, VisitorList
+
+visitor_urls = [
+    path("list/", VisitorList.as_view(), name="visitor-list"),
+    path("create/", CreateVisitor.as_view(), name="create-visitor"),
 ]
 
-urlpatterns = jwt_urls
+urlpatterns = [path('visitors/', include(visitor_urls))]
