@@ -3,24 +3,12 @@ from django.db.models import F, Q
 from django_filters.rest_framework import DjangoFilterBackend
 
 # restframework utils
-from rest_framework.exceptions import NotFound
+from rest_framework import generics, status
 from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from rest_framework.generics import (
-    CreateAPIView, 
-    ListAPIView, 
-    RetrieveAPIView, 
-    UpdateAPIView, 
-    DestroyAPIView
-)
-from rest_framework.status import (
-    HTTP_201_CREATED,
-    HTTP_205_RESET_CONTENT,
-    HTTP_204_NO_CONTENT,
-)
 
 # models
-from blogs.models import Blog, ContentBlock
+from blogs.models import Blog, ContentBlock, Category
 
 # serializers
 from blogs.v1.serializers import (
@@ -28,29 +16,25 @@ from blogs.v1.serializers import (
     BlogDetailSerializer, 
     BlogListSerializer,
     BlogUpdateSerializer,
+    CategorySerializer,
+    TagSerializer
+
 )
 
 # helpers
+from blogs.v1 import res_msg
+from blogs.helpers.blog_filter import BlogFilter
 from base.helpers.pagination import CustomPagination
 from base.helpers.response import APIResponse
-from blogs.helpers.blog_filter import BlogFilter
-from blogs.v1.res_msg import (
-    BLOG_CREATED,
-    BLOG_LIST,
-    BLOG_DETAILS,
-    BLOG_UPDATED,
-    BLOG_DELETED,
-    BLOG_NOT_FOUND,
-)
 
 
-class CreateNewBlog(CreateAPIView):
+class CreateNewBlog(generics.CreateAPIView):
     """
     API View to create new blog
     """
     serializer_class = BlogCreateSerializer
     permission_classes = [IsAuthenticated]
-    RESPONSE_LANGUAGE = "en"
+    RES_LANG = "en"
     
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -66,13 +50,13 @@ class CreateNewBlog(CreateAPIView):
         # Return serialized data for the created blog
         return APIResponse.success(
             data= response_data,
-            message=BLOG_CREATED[self.RESPONSE_LANGUAGE],
-            status=HTTP_201_CREATED
+            message=res_msg.BLOG_CREATED[self.RES_LANG],
+            status=status.HTTP_201_CREATED
         )
 
 
 
-class BlogList(ListAPIView):
+class BlogList(generics.ListAPIView):
     """
     API View to get blog list with pagination, filtering and search
     """
@@ -84,7 +68,7 @@ class BlogList(ListAPIView):
     search_fields = ['title', 'subtitle', 'excerpt', 'author__username']
     ordering_fields = ['published_at', 'view_count', 'title']
     ordering = ['-published_at']
-    RESPONSE_LANGUAGE = "en"
+    RES_LANG = "en"
     
     def get_queryset(self):
         # By default, only show published blogs
@@ -115,16 +99,16 @@ class BlogList(ListAPIView):
         
         return APIResponse.success(
             data=data, 
-            message=BLOG_LIST[self.RESPONSE_LANGUAGE]
+            message=res_msg.BLOG_LIST[self.RES_LANG]
         )
 
 
-class BlogDetails(RetrieveAPIView):
+class BlogDetails(generics.RetrieveAPIView):
     """
     API View to get blog details with id
     """
     serializer_class = BlogDetailSerializer
-    RESPONSE_LANGUAGE = "en"
+    RES_LANG = "en"
     
     def get_queryset(self):
         return Blog.objects.all()
@@ -136,8 +120,9 @@ class BlogDetails(RetrieveAPIView):
             # Increment view count
             Blog.objects.filter(id=lookup_value).update(view_count=F('view_count') + 1)
             return blog
+        
         except Blog.DoesNotExist:
-            raise NotFound(BLOG_NOT_FOUND[self.RESPONSE_LANGUAGE])
+            return APIResponse.error(message=res_msg.BLOG_NOT_FOUND[self.RES_LANG])
     
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -145,18 +130,18 @@ class BlogDetails(RetrieveAPIView):
         
         return APIResponse.success(
             data=serializer.data,
-            message=BLOG_DETAILS[self.RESPONSE_LANGUAGE]
+            message=res_msg.BLOG_DETAILS[self.RES_LANG]
         )
 
 
-class UpdateBlogDetails(UpdateAPIView):
+class UpdateBlogDetails(generics.UpdateAPIView):
     """
     API View to update blog with id
     """
     serializer_class = BlogUpdateSerializer
     permission_classes = [IsAuthenticated]
     lookup_field = 'id'
-    RESPONSE_LANGUAGE = "en"
+    RES_LANG = "en"
     
     def get_queryset(self):
         return Blog.objects.all()
@@ -169,7 +154,7 @@ class UpdateBlogDetails(UpdateAPIView):
             self.check_object_permissions(self.request, blog)
             return blog
         except Blog.DoesNotExist:
-            raise NotFound(BLOG_NOT_FOUND[self.RESPONSE_LANGUAGE])
+            return APIResponse.error(message=res_msg.BLOG_NOT_FOUND[self.RES_LANG])
     
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
@@ -182,8 +167,8 @@ class UpdateBlogDetails(UpdateAPIView):
         # Return the updated blog with all details
         return APIResponse.success(
             data=BlogDetailSerializer(updated_blog, context={'request': request}).data, 
-            message=BLOG_UPDATED[self.RESPONSE_LANGUAGE],
-            status=HTTP_205_RESET_CONTENT
+            message=res_msg.BLOG_UPDATED[self.RES_LANG],
+            status=status.HTTP_205_RESET_CONTENT
         )
     
     def partial_update(self, request, *args, **kwargs):
@@ -192,13 +177,13 @@ class UpdateBlogDetails(UpdateAPIView):
 
 
 
-class DeleteBlog(DestroyAPIView):
+class DeleteBlog(generics.DestroyAPIView):
     """
     API View to delete blog with id
     """
     permission_classes = [IsAuthenticated]
     lookup_field = 'id'
-    RESPONSE_LANGUAGE = "en"
+    RES_LANG = "en"
     
     def get_queryset(self):
         return Blog.objects.all()
@@ -211,7 +196,7 @@ class DeleteBlog(DestroyAPIView):
             self.check_object_permissions(self.request, blog)
             return blog
         except Blog.DoesNotExist:
-            raise NotFound(BLOG_NOT_FOUND[self.RESPONSE_LANGUAGE])
+            return APIResponse.error(message=res_msg.BLOG_NOT_FOUND[self.RES_LANG])
     
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -223,6 +208,91 @@ class DeleteBlog(DestroyAPIView):
         instance.delete()
         
         return APIResponse.success(
-            message=BLOG_DELETED[self.RESPONSE_LANGUAGE], 
-            status=HTTP_204_NO_CONTENT
+            message=res_msg.BLOG_DELETED[self.RES_LANG], 
+            status=status.HTTP_204_NO_CONTENT
         )
+    
+
+# -------------
+# Category
+# -------------
+class CreateNewCategory(generics.CreateAPIView):
+    """
+    API View to create new category
+    """
+    RES_LANG = 'en'
+    serializer_class = CategorySerializer
+    permission_classes = [IsAuthenticated]
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return APIResponse.success(
+            data=serializer.data, 
+            message=res_msg.CATEGORY_CREATED[self.RES_LANG],
+            status=status.HTTP_201_CREATED
+        )
+    
+
+class CategoryList(generics.ListAPIView):
+    """
+    API View to get category list
+    """
+    RES_LANG = 'en'
+    serializer_class = CategorySerializer
+    queryset = Category.objects.all()
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+
+        return APIResponse.success(
+            data=serializer.data, 
+            message=res_msg.CATEGORY_LIST[self.RES_LANG]
+        )
+    
+    
+class UpdateCategory(generics.UpdateAPIView):
+    """
+    API View to update category with id
+    """
+    RES_LANG = 'en'
+    ermission_classes = [IsAuthenticated]
+    serializer_class = CategorySerializer
+    queryset = Category.objects.all()
+    lookup_field = 'id'
+    http_method_names = ["patch"]
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+
+        return APIResponse.success(
+            data=serializer.data, 
+            message=res_msg.CATEGORY_UPDATED[self.RES_LANG],
+            status=status.HTTP_205_RESET_CONTENT
+        )
+    
+    
+class DeleteCategory(generics.DestroyAPIView):
+    """
+    API View to delete category with id
+    """
+    RES_LANG = 'en'
+    ermission_classes = [IsAuthenticated]
+    queryset = Category.objects.all()
+    lookup_field = 'id'
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        self.perform_destroy(instance)
+
+        return APIResponse.success(
+            message=res_msg.CATEGORY_DELETED[self.RES_LANG],
+            status=status.HTTP_204_NO_CONTENT
+        )
+    
