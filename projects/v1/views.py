@@ -1,32 +1,23 @@
-from rest_framework import generics, permissions
-from rest_framework.status import (
-    HTTP_201_CREATED,
-    HTTP_205_RESET_CONTENT,
-    HTTP_204_NO_CONTENT,
-)
+from rest_framework import generics, status, permissions
 
+# helpers
+from projects.v1 import res_msg
 from base.helpers.response import APIResponse
 
+# models
 from projects.models import Project
+
+# serializers
 from projects.v1.serializers import (
     CreateProjectSerializer,
     ProjectDetailsSerializer,
 )
 
-from projects.v1.res_msg import (
-    PROJECT_CREATED,
-    PROJECT_LIST,
-    PROJECT_DETAILS,
-    PROJECT_UPDATED,
-    PROJECT_DELETED,
-)
-
-
 class CreateNewProject(generics.CreateAPIView):
     """
     API view to create new project
     """
-    RESPONSE_LANGUAGE = "en"
+    RES_LANG = "en"
     serializer_class = CreateProjectSerializer
     permission_classes = [permissions.IsAuthenticated]
 
@@ -38,8 +29,8 @@ class CreateNewProject(generics.CreateAPIView):
 
         return APIResponse.success(
             data=project_data,
-            message=PROJECT_CREATED[self.RESPONSE_LANGUAGE],
-            status=HTTP_201_CREATED
+            message=res_msg.PROJECT_CREATED[self.RES_LANG],
+            status=status.HTTP_201_CREATED
         )
 
 
@@ -47,7 +38,7 @@ class ProjectList(generics.ListAPIView):
     """
     API view to get project list
     """
-    RESPONSE_LANGUAGE = "en"
+    RES_LANG = "en"
     permission_classes = [permissions.AllowAny]
     serializer_class = ProjectDetailsSerializer
     queryset = Project.objects.all()
@@ -58,7 +49,7 @@ class ProjectList(generics.ListAPIView):
         
         return APIResponse.success(
             data=serializer.data,
-            message=PROJECT_LIST[self.RESPONSE_LANGUAGE],
+            message=res_msg.PROJECT_LIST[self.RES_LANG],
         )
     
 
@@ -66,7 +57,7 @@ class ProjectDetails(generics.RetrieveAPIView):
     """
     API view to fetch project details
     """
-    RESPONSE_LANGUAGE = "en"
+    RES_LANG = "en"
     permission_classes = [permissions.AllowAny]
     serializer_class = ProjectDetailsSerializer
     queryset = Project.objects.all()
@@ -78,7 +69,7 @@ class ProjectDetails(generics.RetrieveAPIView):
         
         return APIResponse.success(
             data=serializer.data,
-            message=PROJECT_DETAILS[self.RESPONSE_LANGUAGE],
+            message=res_msg.PROJECT_DETAILS[self.RES_LANG],
         )
     
 
@@ -86,7 +77,7 @@ class UpdateProjectDetails(generics.UpdateAPIView):
     """
     API view to update project details
     """
-    RESPONSE_LANGUAGE = "en"
+    RES_LANG = "en"
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = ProjectDetailsSerializer
     queryset = Project.objects.all()
@@ -101,8 +92,8 @@ class UpdateProjectDetails(generics.UpdateAPIView):
 
         return APIResponse.success(
             data=serializer.data,
-            message=PROJECT_UPDATED[self.RESPONSE_LANGUAGE],
-            status=HTTP_205_RESET_CONTENT,
+            message=res_msg.PROJECT_UPDATED[self.RES_LANG],
+            status=status.HTTP_205_RESET_CONTENT,
         )
 
 
@@ -110,7 +101,7 @@ class DeleteProject(generics.DestroyAPIView):
     """
     API view to delete project
     """
-    RESPONSE_LANGUAGE = "en"
+    RES_LANG = "en"
     permission_classes = [permissions.IsAuthenticated]
     queryset = Project.objects.all()
     lookup_field = 'id'
@@ -119,7 +110,7 @@ class DeleteProject(generics.DestroyAPIView):
         instance = self.get_object()
         self.perform_destroy(instance)
         return APIResponse.success(
-            message=PROJECT_DELETED[self.RESPONSE_LANGUAGE],
-            status=HTTP_204_NO_CONTENT
+            message=res_msg.PROJECT_DELETED[self.RES_LANG],
+            status=status.HTTP_204_NO_CONTENT
         )
     

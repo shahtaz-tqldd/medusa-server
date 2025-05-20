@@ -30,5 +30,11 @@ This is a medusa backend server developed with python and django with django res
 
 1. authentication - compelte
 2. projects - complete
-3. service
-4. skills
+3. service - 
+4. skills - 
+5. blogs - complete
+
+
+## Postman API Documentation
+
+https://documenter.getpostman.com/view/36267101/2sB2qZDh2w
