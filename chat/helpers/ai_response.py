@@ -13,6 +13,7 @@ class AIResponseGenerator:
             api_key=settings.HF_TOKEN,
             model=model_id
         )
+
         # System prompt
         self.system_prompt = (
             "You are an AI assistant for Shahtaz Rahman, a skilled software developer specializing in "
@@ -23,7 +24,6 @@ class AIResponseGenerator:
         )
     
     def query(self, messages):
-        """Send a query to the Fireworks AI model via InferenceClient"""
         try:
             completion = self.client.chat.completions.create(
                 model=self.client.model,
@@ -54,7 +54,8 @@ class AIResponseGenerator:
             return "I apologize, but I encountered an error while processing your request."
 
 
-# Function to use in your API views
+
+# Function to use in api view
 def generate_ai_response(query):
     """Generate an AI response to a user query for Shahtaz Rahman's portfolio"""
     try:
