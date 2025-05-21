@@ -2,6 +2,8 @@ import uuid
 from django.db import models
 from django.utils import timezone
 
+from base.choices import ProjectTypeChoices
+
 
 class Visitor(models.Model):
     """Model to store unique visitor information"""
@@ -43,3 +45,32 @@ class Visitor(models.Model):
         self.visit_count += 1
         self.last_visit = timezone.now()
         self.save(update_fields=['visit_count', 'last_visit'])
+
+
+class Client(models.Model):
+    """Model to store client information"""
+    id = models.UUIDField(default=uuid.uuid4, unique=True, editable=False, primary_key=True)
+    visitor = models.ForeignKey(Visitor, on_delete=models.SET_NULL, related_name='clients', null=True, blank=True)
+
+    # contact details
+    name = models.CharField(max_length=100)
+    email = models.EmailField()
+    phone = models.CharField(max_length=20, blank=True, null=True)
+    whatsapp = models.CharField(max_length=20, blank=True, null=True)
+    
+    # project details
+    project_description = models.TextField()
+    budget = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    project_type = models.CharField(max_length=32, choices=ProjectTypeChoices.OTHER)
+    timeline = models.CharField(max_length=64, blank=True, null=True)
+    design_required = models.BooleanField(default=False)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        verbose_name = 'Client'
+        verbose_name_plural = 'Clients'
+        ordering = ['-created_at']
+        
+    def __str__(self):
+        return f"{self.name} ({self.email})"
