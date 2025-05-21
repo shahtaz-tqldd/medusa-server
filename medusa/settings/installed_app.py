@@ -25,6 +25,7 @@ DEVELOPED_APPS = [
     'projects',
     'services',
     'blogs',
+    'chat',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + DEVELOPED_APPS

@@ -7,11 +7,11 @@ class CreateVisitorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Visitor
         fields = [
-            'ip_address', 'device_name', 'device_type',
+            'id', 'ip_address', 'device_name', 'device_type',
             'longitude', 'latitude', 'country', 'city',
             'cookie_id'
         ]
-        read_only_fields = ['id', 'first_visit', 'last_visit', 'visit_count', 'total_time_spent']
+        read_only_fields = ['first_visit', 'last_visit', 'visit_count', 'total_time_spent']
     
     def create(self, validated_data):
         """Override create to handle existing visitors based on IP or cookie"""

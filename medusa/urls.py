@@ -13,6 +13,7 @@ urlpatterns = [
     path('services/', include('services.v1.urls')),
     path('projects/', include('projects.v1.urls')),
     path('blogs/', include('blogs.v1.urls')),
+    path('chat/', include('chat.v1.urls')),
 ]
 
 if settings.DEBUG:

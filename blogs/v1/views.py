@@ -29,9 +29,8 @@ from base.helpers.response import APIResponse
 
 
 class CreateNewBlog(generics.CreateAPIView):
-    """
-    API View to create new blog
-    """
+    """API View to create new blog"""
+    
     serializer_class = BlogCreateSerializer
     permission_classes = [IsAuthenticated]
     RES_LANG = "en"
@@ -56,9 +55,7 @@ class CreateNewBlog(generics.CreateAPIView):
 
 
 class BlogList(generics.ListAPIView):
-    """
-    API View to get blog list with pagination, filtering and search
-    """
+    """API View to get blog list with pagination, filtering and search"""
     serializer_class = BlogListSerializer
     permission_classes = [AllowAny]
     pagination_class = CustomPagination
@@ -103,9 +100,8 @@ class BlogList(generics.ListAPIView):
 
 
 class BlogDetails(generics.RetrieveAPIView):
-    """
-    API View to get blog details with id
-    """
+    """API View to get blog details with id"""
+    
     serializer_class = BlogDetailSerializer
     RES_LANG = "en"
     
@@ -134,9 +130,8 @@ class BlogDetails(generics.RetrieveAPIView):
 
 
 class UpdateBlogDetails(generics.UpdateAPIView):
-    """
-    API View to update blog with id
-    """
+    """API View to update blog with id"""
+    
     serializer_class = BlogUpdateSerializer
     permission_classes = [IsAuthenticated]
     lookup_field = 'id'
@@ -176,9 +171,8 @@ class UpdateBlogDetails(generics.UpdateAPIView):
 
 
 class DeleteBlog(generics.DestroyAPIView):
-    """
-    API View to delete blog with id
-    """
+    """API View to delete blog with id"""
+    
     permission_classes = [IsAuthenticated]
     lookup_field = 'id'
     RES_LANG = "en"
@@ -215,9 +209,8 @@ class DeleteBlog(generics.DestroyAPIView):
 # Category
 # -------------
 class CreateNewCategory(generics.CreateAPIView):
-    """
-    API View to create new category
-    """
+    """API View to create new category"""
+    
     RES_LANG = 'en'
     serializer_class = CategorySerializer
     permission_classes = [IsAuthenticated]
@@ -235,9 +228,8 @@ class CreateNewCategory(generics.CreateAPIView):
     
 
 class CategoryList(generics.ListAPIView):
-    """
-    API View to get category list
-    """
+    """API View to get category list"""
+    
     RES_LANG = 'en'
     serializer_class = CategorySerializer
     queryset = Category.objects.all()
@@ -253,9 +245,8 @@ class CategoryList(generics.ListAPIView):
     
     
 class UpdateCategory(generics.UpdateAPIView):
-    """
-    API View to update category with id
-    """
+    """API View to update category with id"""
+    
     RES_LANG = 'en'
     ermission_classes = [IsAuthenticated]
     serializer_class = CategorySerializer
@@ -277,9 +268,7 @@ class UpdateCategory(generics.UpdateAPIView):
     
     
 class DeleteCategory(generics.DestroyAPIView):
-    """
-    API View to delete category with id
-    """
+    """API View to delete category with id"""
     RES_LANG = 'en'
     ermission_classes = [IsAuthenticated]
     queryset = Category.objects.all()
@@ -299,9 +288,8 @@ class DeleteCategory(generics.DestroyAPIView):
 # Tags
 # -------------
 class CreateNewTag(generics.CreateAPIView):
-    """
-    API View to create new tag
-    """
+    """API View to create new tag"""
+    
     RES_LANG = 'en'
     serializer_class = TagSerializer
     permission_classes = [IsAuthenticated]
@@ -319,9 +307,8 @@ class CreateNewTag(generics.CreateAPIView):
     
 
 class TagList(generics.ListAPIView):
-    """
-    API View to get tag list
-    """
+    """API View to get tag list"""
+    
     RES_LANG = 'en'
     serializer_class = TagSerializer
     queryset = Tag.objects.all()
@@ -337,9 +324,8 @@ class TagList(generics.ListAPIView):
     
     
 class UpdateTag(generics.UpdateAPIView):
-    """
-    API View to update tag with id
-    """
+    """API View to update tag with id"""
+
     RES_LANG = 'en'
     ermission_classes = [IsAuthenticated]
     serializer_class = TagSerializer
@@ -361,9 +347,8 @@ class UpdateTag(generics.UpdateAPIView):
     
     
 class DeleteTag(generics.DestroyAPIView):
-    """
-    API View to delete tag with id
-    """
+    """API View to delete tag with id"""
+    
     RES_LANG = 'en'
     ermission_classes = [IsAuthenticated]
     queryset = Tag.objects.all()

@@ -40,7 +40,12 @@ class CreateVisitor(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         
-        return APIResponse.success(message=res_msg.VISITOR_CREATED[self.RES_LANG])
+        return APIResponse.success(
+            data={
+                "visitor_id": serializer.data["id"]
+            },
+            message=res_msg.VISITOR_CREATED[self.RES_LANG]
+        )
 
 
 class VisitorList(generics.ListAPIView):

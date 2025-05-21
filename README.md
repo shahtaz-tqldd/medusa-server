@@ -2,7 +2,6 @@
 
 The server is developed with **Python, Django**, and **Django REST Framework**. This backend serves as an **authentication service** and manages **projects, blogs, skills**, and provides interaction with an ai **chatbot**.
 
----
 
 ## 📚 Features
 
@@ -34,17 +33,16 @@ The server is developed with **Python, Django**, and **Django REST Framework**. 
 
   * APIs for chatbot integration
 
----
 
 ## 🖥️ Local Development Setup
 
-### 1️⃣ Create Virtual Environment
+### 1. Create Virtual Environment
 
 ```bash
 python -m venv env
 ```
 
-### 2️⃣ Activate Virtual Environment
+### 2. Activate Virtual Environment
 
 * **On Windows**
 
@@ -58,31 +56,30 @@ cd env\Scripts\activate
 source env/bin/activate
 ```
 
-### 3️⃣ Apply Migrations
+### 3. Apply Migrations
 
 ```bash
 python manage.py migrate
 ```
 
-### 4️⃣ Configure Environment Variables
+### 4. onfigure Environment Variables
 
 Create or update a `.env` file in the project root directory with your **database settings**, **email configurations**, and other environment-specific variables.
 
-### 5️⃣ Run the Development Server
+### 5. Run the Development Server
 
 ```bash
 python manage.py runserver
 ```
 
----
 
 ## 🐳 Run with Docker
 
-### 1️⃣ Configure Environment Variables
+### 1. Configure Environment Variables
 
 Make sure your `.env` file is properly configured.
 
-### 2️⃣ Run Docker
+### 2. Run Docker
 
 * **On Linux / macOS**
 
@@ -100,7 +97,6 @@ start_app.bat
 
 > 📌 Make sure Docker Desktop is running.
 
----
 
 ## 📬 API Documentation
 
@@ -108,7 +104,6 @@ Explore the full API documentation via Postman:
 
 👉 [Postman API Docs](https://documenter.getpostman.com/view/36267101/2sB2qZDh2w)
 
----
 
 ## ⚙️ Tech Stack
 
@@ -119,7 +114,6 @@ Explore the full API documentation via Postman:
 * **Docker**
 * **Docker Compose**
 
----
 
 ## 📌 Notes
 
