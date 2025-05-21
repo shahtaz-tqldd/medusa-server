@@ -46,6 +46,7 @@ USE_TZ = True
 
 # secret 
 USER_CREATE_SECRET = os.getenv('USER_CREATE_SECRET')
+HF_TOKEN = os.getenv('HF_TOKEN')
 
 #static url
 STATIC_URL = '/static/'

@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.utils.text import Truncator
 from .models import Conversation, Message
 
 @admin.register(Conversation)
@@ -12,4 +13,10 @@ class ConversationAdmin(admin.ModelAdmin):
 class MessageAdmin(admin.ModelAdmin):
     search_fields = ['content']
     ordering = ['-created_at']
-    list_display = ("content", "sender", "created_at",)
+    list_display = ("short_content", "sender", "created_at")
+
+    def short_content(self, obj):
+        return Truncator(obj.content).chars(75)
+
+    short_content.short_description = 'Content'
+
