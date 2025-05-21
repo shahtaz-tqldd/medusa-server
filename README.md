@@ -1,40 +1,128 @@
-# medusa backend server
-This is a medusa backend server developed with python and django with django rest framework. The sole purpose of this backend to use this as a authentication service, serve projects, blogs and skills. Also interact with a chatbot
+# Medusa Backend Server
 
+The server is developed with **Python, Django**, and **Django REST Framework**. This backend serves as an **authentication service** and manages **projects, blogs, skills**, and provides interaction with an ai **chatbot**.
 
-## run on local environment
-1. create a virtual environment
-`python -m venv env`
+---
 
-2. activate virtual environment
-`cd env\Scripts\activate` for windows
-`source env/bin/activate` for linux
+## 📚 Features
 
-3. apply mirgations
-`python manage.py migrate`
+* **Authentication**
 
-4. create/update the .env with database and other info
+  * User Registration
+  * User Login
+  * Profile Retrieval
+  * Password Reset via Email OTP
 
-5. start the server
-`python manage.py runserver`
+* **Project Management**
 
+  * Create, Update, Delete, and Retrieve Projects
 
+* **Services**
 
-## run with docker
-1. create/update the .env with database and other info
+  * Create, Update, Delete, and Retrieve Services
 
-2. run the docker
-`bash start_app.sh` for linux, make sure you have docker installed in your local machine
-`cd start_app.bat` for windows, make sure you have docker desktop running
+* **Skills**
 
+  * Create, Update, Delete, and Retrieve Skills
 
-1. authentication - compelte
-2. projects - complete
-3. service - 
-4. skills - 
-5. blogs - complete
+* **Blogs**
 
+  * Create, Update, Delete, and Retrieve Blogs
+  * Manage Blog Categories and Tags
 
-## Postman API Documentation
+* **Chatbot Interaction**
 
-https://documenter.getpostman.com/view/36267101/2sB2qZDh2w
+  * APIs for chatbot integration
+
+---
+
+## 🖥️ Local Development Setup
+
+### 1️⃣ Create Virtual Environment
+
+```bash
+python -m venv env
+```
+
+### 2️⃣ Activate Virtual Environment
+
+* **On Windows**
+
+```bash
+cd env\Scripts\activate
+```
+
+* **On Linux / macOS**
+
+```bash
+source env/bin/activate
+```
+
+### 3️⃣ Apply Migrations
+
+```bash
+python manage.py migrate
+```
+
+### 4️⃣ Configure Environment Variables
+
+Create or update a `.env` file in the project root directory with your **database settings**, **email configurations**, and other environment-specific variables.
+
+### 5️⃣ Run the Development Server
+
+```bash
+python manage.py runserver
+```
+
+---
+
+## 🐳 Run with Docker
+
+### 1️⃣ Configure Environment Variables
+
+Make sure your `.env` file is properly configured.
+
+### 2️⃣ Run Docker
+
+* **On Linux / macOS**
+
+```bash
+bash start_app.sh
+```
+
+> 📌 Ensure Docker is installed and running on your system.
+
+* **On Windows**
+
+```bash
+start_app.bat
+```
+
+> 📌 Make sure Docker Desktop is running.
+
+---
+
+## 📬 API Documentation
+
+Explore the full API documentation via Postman:
+
+👉 [Postman API Docs](https://documenter.getpostman.com/view/36267101/2sB2qZDh2w)
+
+---
+
+## ⚙️ Tech Stack
+
+* **Python 3**
+* **Django**
+* **Django REST Framework**
+* **PostgreSQL (recommended)**
+* **Docker**
+* **Docker Compose**
+
+---
+
+## 📌 Notes
+
+* Make sure to set your **necessary credentials** for the `.env` using reference from `.env.example` file.
+* Docker must be installed and running to use Docker deployment.
+* Postman collection link is available above for API testing.
