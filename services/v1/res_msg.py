@@ -14,6 +14,7 @@ SERVICE_DELETED = {
     "en": "Service has been deleted!"
 }
 
+# skills
 SKILL_CREATED = {
     "en": "New Skills Created!"
 }
@@ -29,6 +30,24 @@ SKILL_UPDATED = {
 SKILL_DELETED = {
     "en": "Skill has been deleted!"
 }
+
 SKILL_LIST_EXPECTED = {
     "en": "A list of skills expected!"
+}
+
+# work experiences message
+EXPERIENCE_CREATED = {
+    "en": "New Experience Created!"
+}
+
+EXPERIENCE_UPDATED = {
+    "en": "Experience updated successfully!"
+}
+
+EXPERIENCE_LIST = {
+    "en": "Experience list received!"
+}
+
+EXPERIENCE_DELETED = {
+    "en": "Experience has been deleted!"
 }

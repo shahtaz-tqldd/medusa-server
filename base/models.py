@@ -60,8 +60,8 @@ class Client(models.Model):
     
     # project details
     project_description = models.TextField()
+    project_type = models.CharField(max_length=32, choices=ProjectTypeChoices.choices, default=ProjectTypeChoices.OTHER)
     budget = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    project_type = models.CharField(max_length=32, choices=ProjectTypeChoices.OTHER)
     timeline = models.CharField(max_length=64, blank=True, null=True)
     design_required = models.BooleanField(default=False)
 

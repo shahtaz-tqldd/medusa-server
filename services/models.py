@@ -5,6 +5,7 @@ from services.choices import ProficiencyLevel
 
 
 class Services(models.Model):
+    """models to store work expertise"""
     id = models.CharField(max_length=255, default=uuid.uuid4, unique=True, editable=False, primary_key=True)
     name = models.CharField(max_length=255)
     description = models.TextField()
@@ -33,6 +34,7 @@ class Services(models.Model):
 
 
 class Skills(models.Model):
+    """models to store skilss"""
     id = models.CharField(max_length=255, default=uuid.uuid4, unique=True, editable=False, primary_key=True)
     name = models.CharField(max_length=64)
     description = models.TextField(blank=True, null=True)
@@ -61,3 +63,29 @@ class Skills(models.Model):
         verbose_name = _("Skill")
         verbose_name_plural = _("Skills")
         ordering = ["order"]
+
+
+class Experience(models.Model):
+    """Models to store work experiences"""
+    id = models.CharField(max_length=255, default=uuid.uuid4, unique=True, editable=False, primary_key=True)
+    position = models.CharField(max_length=64)
+    details = models.TextField()
+    
+    started_at = models.DateField()
+    ended_at = models.DateField(blank=True, null=True)
+    
+    company_name = models.CharField(max_length=64)
+    company_location = models.CharField(max_length=64)
+    company_logo = models.ImageField(upload_to="work_experiences/")
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.position} at {self.company_name}"
+
+    class Meta:
+        verbose_name = _("Experience")
+        verbose_name_plural = _("Experiences")
+        ordering = ["-started_at"]
+    
