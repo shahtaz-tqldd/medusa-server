@@ -1,21 +1,74 @@
+# Python cache files
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
+.Python
 
-.env.example
+# Virtual environments
 env/
 venv/
+ENV/
+env.bak/
+venv.bak/
 
+# Environment files
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+.env.example
+
+# Git files
 .git/
 .gitignore
 
+# Docker files (exclude from build context)
 .dockerignore
-Dockerfile
-docker-compose.dev.yml
+Dockerfile*
+docker-compose*.yml
 
-db/docker-compose.yml
+# Database files
+db/
+*.db
+*.sqlite3
 
+# Documentation
 README.md
+*.md
+
+# Scripts
 start_app.sh
 start_app.bat
+startapp
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Coverage reports
+htmlcov/
+.coverage
+.pytest_cache/
+
+# Node modules (if any)
+node_modules/
+npm-debug.log*
+
+# Static files (will be collected in container)
+staticfiles/
+static/
+
+# Media files (if not needed in build)
+media/

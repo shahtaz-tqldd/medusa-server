@@ -10,6 +10,7 @@ class Conversation(models.Model):
     user = models.ForeignKey('base.Visitor', on_delete=models.CASCADE, related_name='conversations')
 
     title = models.CharField(max_length=255, blank=True, null=True)
+    summary = models.TextField(blank=True, null=True)
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

@@ -1,6 +1,9 @@
-from huggingface_hub import InferenceClient
-from django.conf import settings
 import logging
+from django.conf import settings
+
+from huggingface_hub import InferenceClient
+
+from .summerize import summarize_conversation_task
 
 logger = logging.getLogger(__name__)
 
@@ -37,12 +40,13 @@ class AIResponseGenerator:
             logger.error(f"Error querying Fireworks AI via InferenceClient: {e}")
             return "Sorry, I'm having trouble connecting to my brain right now. Please try again later."
     
-    def generate_response(self, user_query, max_length=100, temperature=0.7):
+    def generate_response(self, user_query, conversation_summary):
         """Generate a response to a user query"""
         try:
             # Format the input with the system prompt and user query
             messages = [
                 {"role": "system", "content": self.system_prompt},
+                {"role": "system", "content": conversation_summary},
                 {"role": "user", "content": user_query}
             ]
             
@@ -56,11 +60,22 @@ class AIResponseGenerator:
 
 
 # Function to use in api view
-def generate_ai_response(query):
-    """Generate an AI response to a user query for Shahtaz Rahman's portfolio"""
+def generate_ai_response(user_query, conversation_id, conversation_summary):
+    """Generate an AI response to a user query"""
     try:
+        # generate the ai response
         generator = AIResponseGenerator()
-        response = generator.generate_response(query)
+        response = generator.generate_response(user_query, conversation_summary)
+
+        # send summarization task to background
+        summarize_conversation_task.delay(
+            conversation_id=conversation_id,
+            prev_summary=conversation_summary,
+            user_query=user_query,
+            ai_response=response
+        )
+
+        # return the response
         return response
     
     except Exception as e:

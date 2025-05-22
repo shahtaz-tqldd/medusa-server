@@ -51,8 +51,12 @@ class MessageCreateSerializer(serializers.Serializer):
                 content=query
             )
             
-            # Generate AI response (you'll need to implement this function)
-            ai_response_text = generate_ai_response(query)
+            # Generate AI respons
+            ai_response_text = generate_ai_response(
+                user_query=query, 
+                conversation_id=conversation.id, 
+                conversation_summary=conversation.summary
+            )
             
             # Create AI response message
             ai_message = Message.objects.create(
