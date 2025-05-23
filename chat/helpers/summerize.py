@@ -16,10 +16,10 @@ class ConversationSummary:
             model=model_id
         )
         self.system_prompt = (
-            "Summarize the conversation between a user and an AI assistant clearly and concisely. "
-            "If a previous summary exists, update it to include the new exchange while keeping important context. "
-            "Summary should be a single paragraph."
+            "You are a summarizer. Summarize the conversation between a User and an AI Assistant in a clear, concise single paragraph. "
+            "If a previous summary exists, update it to include the latest exchange while preserving essential context for continuity."
         )
+
 
     
     def perform_summarize(self, prev_summary, user_query, ai_response):

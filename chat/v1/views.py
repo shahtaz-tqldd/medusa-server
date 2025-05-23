@@ -4,6 +4,7 @@ from rest_framework import generics, status, permissions
 
 from chat.v1 import res_msg
 from base.helpers.response import APIResponse
+from chat.helpers.model_testing import AIModelTesting
 
 from chat.models import Conversation, Message
 
@@ -131,3 +132,13 @@ class DeleteConversation(generics.DestroyAPIView):
             message=res_msg.CHAT_DELETE_CONVERSATION[self.RES_LANG], 
             status=status.HTTP_204_NO_CONTENT
         )
+
+
+class AIModelTest(generics.CreateAPIView):
+    """API view to test AI model response"""
+
+    ai_model = AIModelTesting()
+    def create(self, request, *args, **kwargs):
+        user_query = request.data["user_query"]
+        response = self.ai_model.gemini_response(user_query=user_query)
+        return APIResponse.success(data=response)
