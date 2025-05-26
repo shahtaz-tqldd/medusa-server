@@ -1,8 +1,12 @@
 import uuid
+
+from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
-from base.choices import ProjectTypeChoices
+from pgvector.django import VectorField
+
+from base.choices import ProjectTypeChoices, CollectionChoices
 
 
 class Visitor(models.Model):
@@ -74,3 +78,24 @@ class Client(models.Model):
         
     def __str__(self):
         return f"{self.name} ({self.email})"
+
+
+class VectorizedContent(models.Model):
+    """models to store vector data"""
+    collection_type = models.CharField(max_length=20, choices=CollectionChoices)
+    title = models.CharField(max_length=255)
+    content = models.TextField()
+    metadata = models.JSONField(default=dict, blank=True)
+    embedding = VectorField(dimensions=settings.VECTOR_DIMENSION)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        db_table = 'vectorized_content'
+        indexes = [
+            models.Index(fields=['collection_type']),
+            models.Index(fields=['created_at']),
+        ]
+    
+    def __str__(self):
+        return f"{self.collection_type}: {self.title}"
