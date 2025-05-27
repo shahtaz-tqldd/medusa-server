@@ -3,11 +3,8 @@ from typing import List, Dict
 
 # models
 from base.models import VectorizedContent
-from services.models import Services, Skills
-from projects.models import Project
 
 # helpers
-from base.choices import CollectionChoices
 from sentence_transformers import SentenceTransformer
 
 class VectorService:
@@ -53,39 +50,7 @@ class VectorService:
         
         return list(results)
     
-    def update_embeddings_for_collection(self, collection_type: str):
-        """Update embeddings for all items in a collection"""
-        if collection_type == CollectionChoices.SKILLS:
-            items = Skills.objects.all()
-            for item in items:
-                self.create_or_update_vector(
-                    collection_type=CollectionChoices.SKILLS,
-                    title=item.name,
-                    content=f"{item.description} Proficiency: {item.proficiency_level}",
-                    metadata={'id': item.id, 'proficiency': item.proficiency_level}
-                )
-        
-        elif collection_type == CollectionChoices.SERVICES:
-            items = Services.objects.all()
-            for item in items:
-                self.create_or_update_vector(
-                    collection_type=CollectionChoices.SERVICES,
-                    title=item.name,
-                    content=f"{item.description}",
-                    metadata={'id': item.id}
-                )
-        
-        elif collection_type == CollectionChoices.PROJECT:
-            items = Project.objects.all()
-            for item in items:
-                tech_str = ', '.join(item.tech_stacks) if item.tech_stacks else ''
-                self.create_or_update_vector(
-                    collection_type=CollectionChoices.PROJECT,
-                    title=item.name,
-                    content=f"{item.description} Technologies: {tech_str}",
-                    metadata={'id': item.id, 'technologies': item.tech_stacks, 'live_url': item.live_url}
-                )
-    
+
     def create_or_update_vector(self, collection_type: str, title: str, content: str, metadata: Dict = None):
         """Create or update vector entry"""
         # Check if entry exists

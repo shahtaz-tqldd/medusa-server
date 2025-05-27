@@ -35,7 +35,7 @@ def _update_skill_vector_async(instance, created):
         
         # Prepare metadata
         metadata = {
-            'id': instance.id,
+            'id': str(instance.id), 
             'proficiency_level': getattr(instance, 'proficiency_level', ''),
             'model_type': 'skill'
         }
@@ -60,7 +60,7 @@ def delete_skill_vector(sender, instance, **kwargs):
     try:
         VectorizedContent.objects.filter(
             collection_type=CollectionChoices.SKILLS,
-            metadata__id=instance.id
+            metadata__id=str(instance.id), 
         ).delete()
         
         logger.info(f"Vector entry deleted for skill: {instance.name}")
@@ -85,7 +85,7 @@ def _update_service_vector_async(instance, created):
         
         # Prepare metadata
         metadata = {
-            'id': instance.id,
+            'id': str(instance.id),
             'model_type': 'service'
         }
         
@@ -109,7 +109,7 @@ def delete_service_vector(sender, instance, **kwargs):
     try:
         VectorizedContent.objects.filter(
             collection_type=CollectionChoices.SERVICES,
-            metadata__id=instance.id
+            metadata__id=str(instance.id)
         ).delete()
         
         logger.info(f"Vector entry deleted for service: {instance.name}")

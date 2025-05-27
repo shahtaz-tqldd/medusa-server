@@ -120,3 +120,12 @@ Explore the full API documentation via Postman:
 * Make sure to set your **necessary credentials** for the `.env` using reference from `.env.example` file.
 * Docker must be installed and running to use Docker deployment.
 * Postman collection link is available above for API testing.
+
+
+// vector database
+go to postgresql container
+apt-get update
+apt-get install -y postgresql-16-pgvector
+psql -h db -U medusa_db_owner -d medusa_db
+CREATE EXTENSION vector;
+confirm: SELECT * FROM pg_extension WHERE extname = 'vector';

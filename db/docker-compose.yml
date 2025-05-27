@@ -19,7 +19,7 @@ services:
       -c hot_standby_feedback=on
     volumes:
       - medusa_db_data:/var/lib/postgresql/data
-      - ./00_init.sql:/docker-entrypoint-initdb.d/00_init.sql
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
     networks:
       medusa-network:
         aliases:
