@@ -23,8 +23,8 @@ class CreateProjectSerializer(serializers.ModelSerializer):
             'name',
             'description',
             'features',
-            'start_date',
-            'end_date',
+            'started_at',
+            'ended_at',
             'type',
             'live_url',
             'github',
@@ -39,8 +39,8 @@ class CreateProjectSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         # Validate end_date is not before start_date
-        start_date = attrs.get('start_date')
-        end_date = attrs.get('end_date')
+        start_date = attrs.get('started_at')
+        end_date = attrs.get('ended_at')
         if start_date and end_date and end_date < start_date:
             raise serializers.ValidationError({
                 'end_date': _('End date cannot be before start date')
@@ -69,11 +69,12 @@ class ProjectDetailsSerializer(serializers.ModelSerializer):
             'name',
             'description',
             'features',
-            'start_date',
-            'end_date',
+            'tech_stacks',
+            'started_at',
+            'ended_at',
             'type',
             'live_url',
-            'github',
+            'github_url',
             'created_at',
             'images'
         ]

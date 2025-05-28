@@ -37,21 +37,17 @@ def _update_project_vector_async(instance, created):
                 tech_str = ', '.join(instance.tech_stacks)
             else:
                 tech_str = str(instance.tech_stacks)
-            content += f" Technologies: {tech_str}"
+            content += f" Tech Stacks: {tech_str}"
         
         # Add URLs if available
-        url_info = []
         if hasattr(instance, 'github_url') and instance.github_url:
-            url_info.append(f"GitHub: {instance.github_url}")
+            content += f" GitHub: {instance.github_url}"
         if hasattr(instance, 'live_url') and instance.live_url:
-            url_info.append(f"Live Link: {instance.live_url}")
-        
-        if url_info:
-            content += f" Links: {', '.join(url_info)}"
+            content += f" Live Link:: {instance.live_url}"
         
         # Prepare metadata
         metadata = {
-            'id': instance.id,
+            'id': str(instance.id),
             'technologies': getattr(instance, 'technologies', []),
             'github_url': getattr(instance, 'github_url', ''),
             'live_url': getattr(instance, 'live_url', ''),
@@ -78,7 +74,7 @@ def delete_project_vector(sender, instance, **kwargs):
     try:
         VectorizedContent.objects.filter(
             collection_type=CollectionChoices.PROJECT,
-            metadata__id=instance.id
+            metadata__id=str(instance.id)
         ).delete()
         
         logger.info(f"Vector entry deleted for project: {instance.name}")

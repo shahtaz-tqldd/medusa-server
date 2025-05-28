@@ -10,9 +10,6 @@ class Project(models.Model):
     id = models.CharField(max_length=255, default=uuid.uuid4, unique=True, editable=False, primary_key=True)
     name = models.CharField(max_length=255)
     description = models.TextField()
-    features = models.TextField()
-    started_at = models.DateField()
-    ended_at = models.DateField()
 
     type = models.CharField(
         max_length=20,
@@ -25,10 +22,18 @@ class Project(models.Model):
         default=list,
         verbose_name=_("Tech Stacks")
     )
+    features = ArrayField(
+        models.CharField(max_length=255),
+        blank=True,
+        default=list,
+        verbose_name=_("Features")
+    )
 
     live_url = models.URLField(blank=True, null=True, verbose_name=_("Live URL"))
     github_url = models.URLField(blank=True, null=True, verbose_name=_("Github URL"))
 
+    started_at = models.DateField()
+    ended_at = models.DateField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

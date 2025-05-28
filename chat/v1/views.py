@@ -4,7 +4,7 @@ from rest_framework import generics, status, permissions
 
 from chat.v1 import res_msg
 from base.helpers.response import APIResponse
-from chat.helpers.model_testing import AIModelTesting
+from chat.helpers.model_testing import AIModelTesting, SimilarityTesting
 
 from chat.models import Conversation, Message
 
@@ -134,6 +134,7 @@ class DeleteConversation(generics.DestroyAPIView):
         )
 
 
+# testing API
 class AIModelTest(generics.CreateAPIView):
     """API view to test AI model response"""
 
@@ -141,4 +142,13 @@ class AIModelTest(generics.CreateAPIView):
     def create(self, request, *args, **kwargs):
         user_query = request.data["user_query"]
         response = self.ai_model.gemini_response(user_query=user_query)
+        return APIResponse.success(data=response)
+
+class SimilarityTest(generics.CreateAPIView):
+    """API view to similarity test"""
+
+    similarity = SimilarityTesting()
+    def create(self, request, *args, **kwargs):
+        user_query = request.data["user_query"]
+        response = self.similarity.generate_response(user_query=user_query)
         return APIResponse.success(data=response)

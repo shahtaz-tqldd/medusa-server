@@ -36,24 +36,23 @@ class VectorService:
         """Perform similarity search"""
         query_embedding = self.generate_embedding(query)
         
+        # Convert the query_embedding list to a PostgreSQL vector string
+        vector_string = f"[{','.join(map(str, query_embedding))}]"
+        
         queryset = VectorizedContent.objects.all()
         if collection_type:
             queryset = queryset.filter(collection_type=collection_type)
         
-        # Using cosine similarity
+        # Using raw SQL to handle the vector comparison
         results = queryset.extra(
-            select={
-                'similarity': '1 - (embedding <=> %s)'
-            },
-            select_params=[query_embedding],
+            select={'similarity': '1 - (embedding <=> %s::vector)'},
+            select_params=[vector_string],
         ).order_by('-similarity')[:limit]
         
         return list(results)
     
-
     def create_or_update_vector(self, collection_type: str, title: str, content: str, metadata: Dict = None):
         """Create or update vector entry"""
-        # Check if entry exists
         existing = VectorizedContent.objects.filter(
             collection_type=collection_type,
             title=title
@@ -69,3 +68,4 @@ class VectorService:
             return existing
         else:
             return self.create_vector_entry(collection_type, title, content, metadata)
+        
