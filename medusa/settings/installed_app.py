@@ -9,8 +9,6 @@ DJANGO_APPS = [
 
 THIRD_PARTY_APPS = [
     'django_filters',
-    'django_celery_beat',
-    'django_celery_results',
     'corsheaders',
     'rest_framework',
     'rest_framework_simplejwt',

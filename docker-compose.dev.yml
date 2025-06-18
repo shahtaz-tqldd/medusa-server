@@ -1,59 +1,42 @@
+version: '3.9'
+
 services:
-  # Main Django App
   medusa_app:
+    container_name: medusa_app
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: medusa-app
+      
+    volumes:
+      - .:/app
+      - static_volume:/app/staticfiles
+    env_file:
+      - .env
     ports:
       - "5000:5000"
-    volumes:
-      - .:/app
     depends_on:
-      - redis
-    restart: always
-    networks:
-      - medusa-network
-    command: uvicorn medusa.asgi:application --host 0.0.0.0 --port 5000 --reload
-
-  # Celery Worker
-  celery_worker:
-    container_name: medusa-celery-worker
-    build: .
-    depends_on:
-      - redis
-    command: celery -A medusa worker --loglevel=info --concurrency=2
-    volumes:
-      - .:/app
-    restart: always
+      - medusa_db
     networks:
       - medusa-network
 
-  # Celery Beat
-  celery_beat:
-    container_name: medusa-celery-beat
-    build: .
-    command: bash -c "celery -A medusa beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler"
+  medusa_db:
+    image: postgres:16
+    container_name: medusa_postgres
+    environment:
+      - POSTGRES_DB=${PGDB_NAME}
+      - POSTGRES_USER=${PGDB_USER}
+      - POSTGRES_PASSWORD=${PGDB_PASSWORD}
     volumes:
-      - .:/app
-    depends_on:
-      - redis
-    restart: always
-    networks:
-      - medusa-network
-
-
-  # Redis
-  redis:
-    image: redis:7-alpine
-    container_name: medusa-redis
-    restart: always
+      - medusa_data:/var/lib/postgresql/data/
     ports:
-      - "6380:6379"
-    command: redis-server --save 20 1 --loglevel warning
+      - "5440:5432"
     networks:
       - medusa-network
 
 networks:
   medusa-network:
     external: true
+
+volumes:
+  medusa_data:
+  static_volume:

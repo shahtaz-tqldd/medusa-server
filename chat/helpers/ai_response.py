@@ -1,133 +1,99 @@
-from typing import List, Dict, Optional
-from django.conf import settings
-
 from google import genai
-from huggingface_hub import InferenceClient
-
-from .summerize import summarize_conversation_task
-from base.helpers.vectorize import VectorService
+from django.conf import settings
+from chat.v1.res_msg import CHAT_FAILED_MESSAGE
 
 import logging
 logger = logging.getLogger(__name__)
 
 class QueryPrompt:
     def __init__(self):
-        self.vector_service = VectorService()
         self.system_prompt = (
-            "You are Era, Shahtaz's AI assistant on his software development portfolio website. Introduce yourself when visitor’s message include a greeting, otherwise never starts your message with 'Hi There'"
-            "Respond to visitor questions about Shahtaz's skills, projects, services, and expertise in a professional yet approachable tone. "
-            "Use *only* the information provided in the context; do not invent or reference external knowledge. "
-            "For project ideas or collaboration interest: Show enthusiasm, offer relevant suggestions based on Shahtaz’s expertise, and encourage further discussion or contact. "
-            "If a visitor explicitly requests to schedule a meeting, share this Calendly link: https://example.calendly.com/shahtaz/. "
-            "For questions unrelated to Shahtaz’s portfolio, politely redirect to relevant topics or suggest contacting Shahtaz directly."
+            "You are Era, a friendly and professional AI assistant for Shahtaz's portfolio. "
+            "Shahtaz is a software developer with 2 years of experience in full-stack development, specializing in clean, scalable, user-centered applications. "
+            "His skills include React.js, Next.js, Node.js, Python, Django, Docker, Socket.IO, vector databases (Pinecone, pgvector), and AI integrations. "
+            "Projects include: "
+            "- An HRM system with real-time payroll and attendance tracking (Django, Socket.IO, PostgreSQL). "
+            "- An eCommerce platform with personalized recommendations (React.js, Node.js, MongoDB). "
+            "- An AI-powered portfolio assistant chatbot (Python, Gemini API, Django). "
+            "Answer visitor questions about Shahtaz’s skills, projects, services, or expertise based only on this context. "
+            "Use a warm, engaging tone to attract potential clients. "
+            "For meeting requests, share: https://example.calendly.com/shahtaz/. "
+            "If a query is outside Shahtaz’s domain (e.g., unrelated technologies), politely redirect to his expertise or suggest contacting him. "
+            "Example: 'I’m not sure about blockchain, but Shahtaz excels at building AI chatbots and scalable web apps. Want to learn more?'"
         )
 
-    def _format_context(self, contexts: List) -> str:
-        """Format retrieved contexts into a readable string"""
-        if not contexts:
-            return "No specific context available."
-        
-        formatted_contexts = []
-        for i, ctx in enumerate(contexts, 1):
-            context_block = f"""Context {i}: Title: {ctx.title}\nContent: {ctx.content}\nType: {ctx.collection_type}"""
-            formatted_contexts.append(context_block.strip())
-
-        return "\n\n".join(formatted_contexts)
-
-    
-    def generate_prompt(self, user_query: str, collection_type: Optional[str] = None, max_context_items: int = 5) -> Dict:
-        relevant_contexts = self.vector_service.similarity_search(
-            query=user_query,
-            collection_type=collection_type,
-            limit=max_context_items
+        self.system_prompt_summarize = (
+            "Summarize the conversation between the user and the AI assistant in 50–100 words. "
+            "Focus on key topics discussed, user intent, and Shahtaz’s relevant skills or projects. "
+            "If a previous summary exists, merge it with the current conversation, prioritizing new information and avoiding redundancy. "
+            "Keep the summary concise, factual, and neutral. "
+            "Example: 'User asked about Shahtaz’s experience with AI chatbots. Era highlighted his work on an AI-powered portfolio assistant using Python and Gemini API. User also inquired about scheduling a meeting; Era shared the Calendly link.'"
         )
-            
-        context = self._format_context(relevant_contexts)
-        
-        return f"""{self.system_prompt}\n\n*CONTEXT:* {context}\n\n*VISITOR QUERY:* {user_query}"""
 
+    def generate_prompt(self, user_query: str, previous_history:str):
+        return f"{self.system_prompt}\n\nVisitor Query: {user_query}\n\nPrevious Summary: {previous_history}"
 
-
-class HuggingFaceService:
-    """Class to handle AI response generation using Hugging Face InferenceClient with Fireworks AI"""
-    
-    def __init__(self, model_id="meta-llama/Llama-3.1-8B-Instruct"):
-        self.client = InferenceClient(
-            provider="fireworks-ai",
-            api_key=settings.HF_TOKEN,
-            model=model_id
+    def generate_summarize_prompt(self, user_query: str, ai_response: str, previous_history: str):
+        return (
+            f"{self.system_prompt_summarize}\n\n"
+            f"Visitor Query: {user_query}\n\n"
+            f"AI Response: {ai_response}\n\n"
+            f"Previous Summary: {previous_history}"
         )
-    
-    def generate_response(self, user_query, conversation_summary):
-        """Generate a response to a user query"""
-        query_prompt = QueryPrompt()
-        prompt = query_prompt.generate_prompt(user_query)
-        try:
-            completion = self.client.chat.completions.create(
-                model=self.client.model,
-                messages=prompt,
-                max_tokens=100,  # Default max length, adjustable
-                temperature=0.7,  # Default temperature, adjustable
-                top_p=0.95,
-            )
-            return completion.choices[0].message.content.strip()
-            
-        except Exception as e:
-            logger.exception(f"Error generating response: {e}")
-            return "I apologize, but I encountered an error while processing your request."
 
 
 class GenAIService:
     def __init__(self):
-        self.vector_service = VectorService()
-        self.gemini_client = genai.Client(api_key=settings.GEMINI_TOKEN)
-        self.model = "gemma-3-1b-it"
-
-    def generate_response(self, user_query: str, conversation_summary, collection_type: Optional[str] = None, max_context_items: int = 5) -> Dict:
-        """Generate AI response using RAG approach"""
         try:
-            # 1. Retrieve relevant context using vector similarity search
-            prompt = QueryPrompt()
-            full_prompt = prompt.generate_prompt(user_query)
-            
-            # 4. Generate response using Gemini
-            response = self.gemini_client.models.generate_content(
-                model = self.model,
-                contents = full_prompt,
+            self.gemini_client = genai.GenerativeModel(
+                model_name=settings.GEMINI_MODEL,
+                api_key=settings.GEMINI_TOKEN
             )
-            
-            # 5. Return structured response
-            return response.text
-            
         except Exception as e:
-            return "I apologize, but I encountered an error while processing your question. Please try again or contact Shahtaz directly for assistance."
+            logger.error(f"Failed to initialize Gemini client: {e}")
+            raise
+        self.prompt = QueryPrompt()
 
+    def generate_response(self, user_query: str, previous_history: str) -> str:
+        try:
+            prompt_text = self.prompt.generate_prompt(user_query, previous_history)
+            response = self.gemini_client.generate_content(
+                contents=[{"role": "user", "parts": [{"text": prompt_text}]}],
+                generation_config={"temperature": 0.7, "max_output_tokens": 500}
+            )
+            return response.text
+        except genai.exceptions.APIError as e:
+            logger.error(f"Gemini API error: {e}")
+            return CHAT_FAILED_MESSAGE["en"]
+        except Exception as e:
+            logger.error(f"Unexpected error generating response: {e}")
+            return CHAT_FAILED_MESSAGE["en"]
 
+    def summarize(self, previous_history: str, user_query: str, ai_response: str) -> str:
+        try:
+            prompt_text = self.prompt.generate_summarize_prompt(user_query, ai_response, previous_history)
+            response = self.gemini_client.generate_content(
+                contents=[{"role": "user", "parts": [{"text": prompt_text}]}],
+                generation_config={"temperature": 0.5, "max_output_tokens": 200}
+            )
+            return response.text
+        except genai.exceptions.APIError as e:
+            logger.error(f"Gemini API error during summarization: {e}")
+            return previous_history
+        except Exception as e:
+            logger.error(f"Unexpected error summarizing: {e}")
+            return previous_history
 
+# Singleton instance
+_generator = None
 
-# Function to use in api view
-def generate_ai_response(user_query, conversation_id, conversation_summary):
-    """Generate an AI response to a user query"""
+def generate_ai_response(user_query: str, previous_history: str, conversation_id) -> str:
+    global _generator
     try:
-        # # generate the ai response
-        # generator = HuggingFaceService()
-        # response = generator.generate_response(user_query, conversation_summary)
-
-        # # send summarization task to background
-        # summarize_conversation_task.delay(
-        #     conversation_id=conversation_id,
-        #     prev_summary=conversation_summary,
-        #     user_query=user_query,
-        #     ai_response=response
-        # )
-
-        generator = GenAIService()
-        response = generator.generate_response(user_query, conversation_summary)
-
-        # return the response
-        return response
-    
+        if _generator is None:
+            _generator = GenAIService()
+        
+        return _generator.generate_response(user_query, previous_history)
     except Exception as e:
         logger.exception(f"Unexpected error in generate_ai_response: {e}")
-        return "I'm sorry, I'm having trouble understanding your question right now. Could you please try again?"
-    
+        return CHAT_FAILED_MESSAGE["en"]

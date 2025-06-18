@@ -7,9 +7,3 @@ class ProjectTypeChoices(models.TextChoices):
     FULL_STACK_DEVELOPMENT = "full_stack", _("Full Stack Development")
     DEPLOYMENT = "deployment", _("Deployment Development")
     OTHER = "other", _("Other")
-
-
-class CollectionChoices(models.TextChoices):
-    SKILLS = "skills", _("Skills")
-    SERVICES = "services", _("Services")
-    PROJECT = "project", _("Project")

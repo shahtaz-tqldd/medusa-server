@@ -3,15 +3,11 @@ from .views import (
     CreateMessage, 
     ConversationList, 
     SingleConversation, 
-    DeleteConversation,
-    AIModelTest,
-    SimilarityTest
+    DeleteConversation
 )
 
 chat_urls = [
     path("create-message/", CreateMessage.as_view(), name="create-message"),
-    path("model-test/", AIModelTest.as_view(), name="model-test"),
-    path("similarity-test/", SimilarityTest.as_view(), name="similarity-test"),
 ]
 
 conversation_urls = [

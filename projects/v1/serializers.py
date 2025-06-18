@@ -27,13 +27,13 @@ class CreateProjectSerializer(serializers.ModelSerializer):
             'ended_at',
             'type',
             'live_url',
-            'github',
+            'github_url',
             'images'
         ]
 
         extra_kwargs = {
             'live_url': {'required': False, 'allow_blank': True},
-            'github': {'required': False, 'allow_blank': True},
+            'github_url': {'required': False, 'allow_blank': True},
             'features': {'required': False},
         }
 

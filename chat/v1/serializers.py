@@ -52,11 +52,7 @@ class MessageCreateSerializer(serializers.Serializer):
             )
             
             # Generate AI respons
-            ai_response_text = generate_ai_response(
-                user_query=query, 
-                conversation_id=conversation.id, 
-                conversation_summary=conversation.summary
-            )
+            ai_response_text = generate_ai_response(user_query=query)
             
             # Create AI response message
             ai_message = Message.objects.create(

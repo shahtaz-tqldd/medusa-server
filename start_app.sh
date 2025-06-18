@@ -1,8 +1,5 @@
 #!/bin/sh
 
-sudo systemctl stop nginx
-sudo systemctl stop postgresql
-
 # clean docker
 sudo docker system prune --force
 
@@ -10,16 +7,7 @@ sudo docker system prune --force
 echo "Creating Docker network"
 sudo docker network create medusa-network
 
-# run the database
-echo "cd into db"
-cd db
-echo "running docker compose for database"
-sudo docker compose build && sudo docker compose up -d
-
-echo "cd into base directory"
-cd ..
-
-echo "closing local and dev and prod docker"
+echo "closing dev docker"
 sudo docker compose -f docker-compose.dev.yml down
 
 echo "running docker compose for webserver"

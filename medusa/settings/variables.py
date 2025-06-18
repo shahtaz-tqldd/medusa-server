@@ -51,12 +51,8 @@ USE_TZ = True
 
 # secret 
 USER_CREATE_SECRET = os.getenv('USER_CREATE_SECRET')
-HF_TOKEN = os.getenv('HF_TOKEN')
 GEMINI_TOKEN = os.getenv('GEMINI_TOKEN')
-
-# vector db
-VECTOR_DIMENSION = 384  # all-MiniLM-L6-v2 dimension
-EMBEDDING_MODEL = 'all-MiniLM-L6-v2'
+GEMINI_MODEL = os.getenv('GEMINI_MODEL')
 
 #static url
 STATIC_URL = '/static/'
