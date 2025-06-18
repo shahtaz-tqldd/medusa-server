@@ -11,6 +11,11 @@ DEBUG = os.getenv('APP_ENV') == 'dev'
 
 ALLOWED_HOSTS = [host.strip() for host in (os.getenv('ALLOWED_HOSTS') or '').split(',') if host.strip()]
 
+# cors
+CORS_ORIGIN_ALLOW_ALL = False
+CORS_ALLOW_HEADERS = '*'
+CORS_ALLOWED_ORIGINS = [origin.strip() for origin in (os.getenv('ALLOWED_ORIGINS') or '').split(',') if origin.strip()]
+
 ROOT_URLCONF = 'medusa.urls'
 
 # JWT

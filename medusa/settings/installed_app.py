@@ -8,16 +8,13 @@ DJANGO_APPS = [
 ]
 
 THIRD_PARTY_APPS = [
+    'django_filters',
+    'django_celery_beat',
+    'django_celery_results',
+    'corsheaders',
     'rest_framework',
     'rest_framework_simplejwt',
-    'django_filters',
 ]
-
-REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-    )
-}
 
 DEVELOPED_APPS = [
     'base',

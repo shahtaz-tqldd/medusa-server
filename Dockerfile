@@ -1,33 +1,21 @@
-# Use an official Python runtime as a parent image
 FROM python:3.12-slim
 
-# Set environment variables
-ENV PYTHONUNBUFFERED=1
-ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED 1
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    gcc \
-    && rm -rf /var/lib/apt/lists/*
-
-# Set the working directory in the container
 WORKDIR /app
+ADD ./requirements.txt /app/requirements.txt
 
-# Copy requirements first for better Docker caching
-COPY requirements.txt /app/requirements.txt
+RUN pip install setuptools
+RUN apt-get update && apt-get install build-essential binutils libproj-dev gdal-bin curl -y
 
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip3 install -U pip
 
-# Copy the entrypoint script and make it executable
-COPY entrypoint.sh /usr/local/bin/entrypoint.sh
-RUN chmod +x /usr/local/bin/entrypoint.sh
+RUN pip install -r requirements.txt
+RUN apt-get --purge autoremove build-essential -y
 
-# Copy the current directory contents into the container
 COPY . /app
+COPY entrypoint.sh /usr/local/bin
+RUN chmod +x /usr/local/bin/entrypoint.sh
+CMD ["entrypoint.sh"]
 
-# Expose port 5000 for the app
 EXPOSE 5000
-
-# Set the entrypoint
-ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
