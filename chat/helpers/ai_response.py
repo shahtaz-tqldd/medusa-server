@@ -7,6 +7,7 @@ logger = logging.getLogger(__name__)
 
 class QueryPrompt:
     def __init__(self):
+        # Clean, efficient prompt — short and purpose-specific
         self.system_prompt = (
             "You are Era, a friendly and professional AI assistant for Shahtaz's portfolio. "
             "Shahtaz is a software developer with 2 years of experience in full-stack development, specializing in clean, scalable, user-centered applications. "
@@ -31,69 +32,50 @@ class QueryPrompt:
         )
 
     def generate_prompt(self, user_query: str, previous_history:str):
-        return f"{self.system_prompt}\n\nVisitor Query: {user_query}\n\nPrevious Summary: {previous_history}"
-
-    def generate_summarize_prompt(self, user_query: str, ai_response: str, previous_history: str):
-        return (
-            f"{self.system_prompt_summarize}\n\n"
-            f"Visitor Query: {user_query}\n\n"
-            f"AI Response: {ai_response}\n\n"
-            f"Previous Summary: {previous_history}"
-        )
+        return f"{self.system_prompt}\n\nPrevious Conversation Summary: {previous_history}\n\nVisitor Query: {user_query}"
+    
+    def generate_summarize_prompt(self, previous_history:str, user_query: str, ai_response:str):
+        return f"{self.system_prompt_summarize}\n\nVisitor Query: {user_query}\n\nAI Assistance Responded:{ai_response}\n\nPrevious Conversation Summary:{previous_history}"
+    
+    
 
 
 class GenAIService:
     def __init__(self):
-        try:
-            self.gemini_client = genai.GenerativeModel(
-                model_name=settings.GEMINI_MODEL,
-                api_key=settings.GEMINI_TOKEN
-            )
-        except Exception as e:
-            logger.error(f"Failed to initialize Gemini client: {e}")
-            raise
+        self.gemini_client = genai.Client(api_key=settings.GEMINI_TOKEN)
+        self.model = settings.GEMINI_MODEL
         self.prompt = QueryPrompt()
 
-    def generate_response(self, user_query: str, previous_history: str) -> str:
+    def generate_response(self, user_query: str, previous_history):
         try:
-            prompt_text = self.prompt.generate_prompt(user_query, previous_history)
-            response = self.gemini_client.generate_content(
-                contents=[{"role": "user", "parts": [{"text": prompt_text}]}],
-                generation_config={"temperature": 0.7, "max_output_tokens": 500}
+            full_prompt = self.prompt.generate_prompt(user_query, previous_history)
+            response = self.gemini_client.models.generate_content(
+                model=self.model,
+                contents=full_prompt,
             )
             return response.text
-        except genai.exceptions.APIError as e:
-            logger.error(f"Gemini API error: {e}")
-            return CHAT_FAILED_MESSAGE["en"]
         except Exception as e:
-            logger.error(f"Unexpected error generating response: {e}")
+            logger.error(f"Error generating AI response: {e}")
             return CHAT_FAILED_MESSAGE["en"]
+    
 
-    def summarize(self, previous_history: str, user_query: str, ai_response: str) -> str:
+    def summarize(self, previous_history, user_query, ai_response):
         try:
-            prompt_text = self.prompt.generate_summarize_prompt(user_query, ai_response, previous_history)
-            response = self.gemini_client.generate_content(
-                contents=[{"role": "user", "parts": [{"text": prompt_text}]}],
-                generation_config={"temperature": 0.5, "max_output_tokens": 200}
+            full_prompt = self.prompt.generate_summarize_prompt(previous_history, user_query, ai_response)
+            response = self.gemini_client.models.generate_content(
+                model=self.model,
+                contents=full_prompt,
             )
             return response.text
-        except genai.exceptions.APIError as e:
-            logger.error(f"Gemini API error during summarization: {e}")
-            return previous_history
         except Exception as e:
-            logger.error(f"Unexpected error summarizing: {e}")
+            logger.error(f"Error generating AI response: {e}")
             return previous_history
 
-# Singleton instance
-_generator = None
 
-def generate_ai_response(user_query: str, previous_history: str, conversation_id) -> str:
-    global _generator
+def generate_ai_response(user_query, previous_history):
     try:
-        if _generator is None:
-            _generator = GenAIService()
-        
-        return _generator.generate_response(user_query, previous_history)
+        generator = GenAIService()
+        return generator.generate_response(user_query, previous_history)
     except Exception as e:
         logger.exception(f"Unexpected error in generate_ai_response: {e}")
         return CHAT_FAILED_MESSAGE["en"]

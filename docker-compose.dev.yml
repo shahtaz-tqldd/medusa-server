@@ -6,7 +6,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      
     volumes:
       - .:/app
       - static_volume:/app/staticfiles
@@ -16,6 +15,7 @@ services:
       - "5000:5000"
     depends_on:
       - medusa_db
+      - medusa_redis
     networks:
       - medusa-network
 
@@ -33,6 +33,32 @@ services:
     networks:
       - medusa-network
 
+  medusa_redis:
+    image: redis:7-alpine
+    container_name: medusa_redis
+    ports:
+      - "6381:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - medusa-network
+
+  medusa_celery:
+    container_name: medusa_celery
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    depends_on:
+      - medusa_db
+      - medusa_redis
+    networks:
+      - medusa-network
+    command: ["celery", "-A", "medusa", "worker", "--loglevel=info"]
+
 networks:
   medusa-network:
     external: true
@@ -40,3 +66,4 @@ networks:
 volumes:
   medusa_data:
   static_volume:
+  redis_data:

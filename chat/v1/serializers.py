@@ -8,14 +8,13 @@ from base.models import Visitor
 
 from chat.choices import MessageSenderChoice
 from chat.helpers.ai_response import generate_ai_response
+from chat.helpers.summarize import summarize_conversation
+
+MAX_TITLE_LENGTH = 40
 
 class MessageCreateSerializer(serializers.Serializer):
-    """
-    Serializer to create new message and generate reply from ai, 
-    if conversation_id is found in the request query: 
-    - create message in the conversation 
-    - otherwise create a new conversation
-    """
+    """Serializer to create a new message and AI response within a conversation."""
+    
     visitor_id = serializers.UUIDField(required=True)
     query = serializers.CharField(required=True)
     
@@ -29,45 +28,53 @@ class MessageCreateSerializer(serializers.Serializer):
     def create(self, validated_data):
         visitor = validated_data.get('visitor_id')
         query = validated_data.get('query')
-        
         conversation_id = self.context.get('conversation_id')
-        
+
         with transaction.atomic():
-            # Get or create conversation
-            title = query[:40] if len(query) <= 40 else f"{query[:37]}..."
+            # Prepare conversation title
+            title = query if len(query) <= MAX_TITLE_LENGTH else f"{query[:MAX_TITLE_LENGTH-3]}..."
+
+            # Get existing or create new conversation
+            conversation = None
             if conversation_id:
-                try:
-                    conversation = Conversation.objects.get(id=conversation_id, user=visitor)
-                except Conversation.DoesNotExist:
-                    # If provided conversation doesn't exist, create a new one
-                    conversation = Conversation.objects.create(user=visitor, title=title)
-            else:
-                conversation = Conversation.objects.create(user=visitor, title=title)
+                conversation = Conversation.objects.filter(id=conversation_id, user=visitor).first()
             
+            if not conversation:
+                conversation = Conversation.objects.create(user=visitor, title=title)
+
             # Create user message
             user_message = Message.objects.create(
                 conversation=conversation,
                 sender=MessageSenderChoice.VISITOR,
                 content=query
             )
-            
-            # Generate AI respons
-            ai_response_text = generate_ai_response(user_query=query)
-            
+
+            # Generate AI response
+            ai_response_text = generate_ai_response(
+                user_query=query, 
+                previous_history=conversation.summary
+            )
+
             # Create AI response message
             ai_message = Message.objects.create(
                 conversation=conversation,
                 sender=MessageSenderChoice.AI,
                 content=ai_response_text
             )
-            
+
+            # Summarize conversation asynchronously
+            summarize_conversation.delay(
+                conversation_id=conversation.id, 
+                user_query=query, 
+                ai_response=ai_response_text, 
+                previous_history=conversation.summary
+            )
+
             return {
                 'conversation_id': conversation.id,
                 'user_message': user_message,
                 'ai_response': ai_message
             }
-
-
 class ConversationSerializer(serializers.ModelSerializer):
     """Serializer to return conversation list with conversation id"""
     last_message = serializers.SerializerMethodField()
