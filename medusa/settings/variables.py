@@ -53,14 +53,6 @@ USER_CREATE_SECRET = os.getenv('USER_CREATE_SECRET')
 GEMINI_TOKEN = os.getenv('GEMINI_TOKEN')
 GEMINI_MODEL = os.getenv('GEMINI_MODEL')
 
-# celery
-CELERY_BROKER_URL = os.getenv('REDIS_URL', 'redis://medusa_redis:6379/0')
-CELERY_RESULT_BACKEND = os.getenv('REDIS_URL', 'redis://medusa_redis:6379/0')
-CELERY_ACCEPT_CONTENT = ['json']
-CELERY_TASK_SERIALIZER = 'json'
-CELERY_RESULT_SERIALIZER = 'json'
-CELERY_TIMEZONE = 'UTC'
-
 #static url
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / "staticfiles"
