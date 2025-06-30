@@ -11,10 +11,14 @@ DEBUG = os.getenv('APP_ENV') == 'dev'
 
 ALLOWED_HOSTS = [host.strip() for host in (os.getenv('ALLOWED_HOSTS') or '').split(',') if host.strip()]
 
+# cors
+CORS_ORIGIN_ALLOW_ALL = False
+CORS_ALLOW_HEADERS = '*'
+CORS_ALLOWED_ORIGINS = [origin.strip() for origin in (os.getenv('ALLOWED_ORIGINS') or '').split(',') if origin.strip()]
+
 ROOT_URLCONF = 'medusa.urls'
 
 # JWT
-
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(hours=4),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
@@ -46,8 +50,16 @@ USE_TZ = True
 
 # secret 
 USER_CREATE_SECRET = os.getenv('USER_CREATE_SECRET')
-HF_TOKEN = os.getenv('HF_TOKEN')
 GEMINI_TOKEN = os.getenv('GEMINI_TOKEN')
+GEMINI_MODEL = os.getenv('GEMINI_MODEL')
+
+# celery
+CELERY_BROKER_URL = os.getenv('REDIS_URL', 'redis://medusa_redis:6379/0')
+CELERY_RESULT_BACKEND = os.getenv('REDIS_URL', 'redis://medusa_redis:6379/0')
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'UTC'
 
 #static url
 STATIC_URL = '/static/'

@@ -4,7 +4,6 @@ from rest_framework import generics, status, permissions
 
 from chat.v1 import res_msg
 from base.helpers.response import APIResponse
-from chat.helpers.model_testing import AIModelTesting
 
 from chat.models import Conversation, Message
 
@@ -19,7 +18,7 @@ class CreateMessage(generics.CreateAPIView):
     """API View to create new message"""
     RES_LANG = 'en'
     permission_classes = [permissions.AllowAny]
-    serializer_class = MessageCreateSerializer
+    serializer_class = MessageCreateSerializer  # No changes needed here!
     
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -42,7 +41,6 @@ class CreateMessage(generics.CreateAPIView):
             message=res_msg.CHAT_MESSAGE_CREATED[self.RES_LANG], 
             status=status.HTTP_201_CREATED
         )
-
 
 class ConversationList(generics.ListAPIView):
     """API View to get all conversation list"""
@@ -133,12 +131,3 @@ class DeleteConversation(generics.DestroyAPIView):
             status=status.HTTP_204_NO_CONTENT
         )
 
-
-class AIModelTest(generics.CreateAPIView):
-    """API view to test AI model response"""
-
-    ai_model = AIModelTesting()
-    def create(self, request, *args, **kwargs):
-        user_query = request.data["user_query"]
-        response = self.ai_model.gemini_response(user_query=user_query)
-        return APIResponse.success(data=response)

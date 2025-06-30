@@ -5,7 +5,7 @@ from base.models import Visitor, Client
 class VisitorAdmin(admin.ModelAdmin):
     search_fields = ['city', 'country']
     ordering = ['-last_visit']
-    list_display = ("ip_address", "country", "device_name", "last_visit")
+    list_display = ("id", "ip_address", "country", "device_name", "last_visit")
 
 
 @admin.register(Client)
@@ -13,3 +13,4 @@ class ClientAdmin(admin.ModelAdmin):
     search_fields = ['name', 'project_type', 'project_description']
     ordering = ['-created_at']
     list_display = ("name", "visitor__country", "project_type", "created_at")
+

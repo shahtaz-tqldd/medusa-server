@@ -21,32 +21,38 @@ from base.v1.serializers import (
     CreateClientSerializer,
 )
 
-
-class CreateVisitor(generics.CreateAPIView):
-    """API view to store visitor details"""
-    RES_LANG = 'en'
-    permission_class = [permissions.AllowAny]
+class CreateOrUpdateVisitor(generics.CreateAPIView):
+    """API view to create or update visitor details"""
+    permission_classes = [permissions.AllowAny]
     serializer_class = CreateVisitorSerializer
-    
-    def create(self, request, *args, **kwargs):
-        # Extract client IP if not provided in data
-        if 'ip_address' not in request.data:
-            x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-            if x_forwarded_for:
-                ip = x_forwarded_for.split(',')[0]
-            else:
-                ip = request.META.get('REMOTE_ADDR')
-            request.data['ip_address'] = ip
-            
+
+    def post(self, request, *args, **kwargs):
+        visitor_id = request.data.get("visitor_id")
+
+        if visitor_id:
+            try:
+                visitor = Visitor.objects.get(id=visitor_id)
+                visitor.update_visit()
+                serializer = self.get_serializer(visitor)
+                return APIResponse.success(
+                    data={"visitor_id": str(visitor.id)},
+                    message="Visitor updated successfully."
+                )
+            except Visitor.DoesNotExist:
+                pass  # If visitor not found, we'll create a new one
+
+        # If no visitor_id provided or invalid, create a new visitor
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        ip = x_forwarded_for.split(',')[0] if x_forwarded_for else request.META.get('REMOTE_ADDR')
+        request.data['ip_address'] = ip
+
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        
+
         return APIResponse.success(
-            data={
-                "visitor_id": serializer.data["id"]
-            },
-            message=res_msg.VISITOR_CREATED[self.RES_LANG]
+            data={"visitor_id": serializer.data["id"]},
+            message="Visitor created successfully."
         )
 
 
