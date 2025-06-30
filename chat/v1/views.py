@@ -82,7 +82,7 @@ class SingleConversation(generics.RetrieveAPIView):
         if not conversation_id:
             return Message.objects.none()
     
-        return Message.objects.filter(conversation_id=conversation_id).order_by('-created_at')
+        return Message.objects.filter(conversation_id=conversation_id).order_by('created_at')
     
     def retrieve(self, request, *args, **kwargs):
         conversation_id = self.kwargs.get('conversation_id')

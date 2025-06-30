@@ -4,6 +4,7 @@ from .views import (
   VisitorList, 
   ClientList, 
   CreateClient,
+  OverviewStats
 )
 
 visitor_urls = [
@@ -16,7 +17,12 @@ client_urls = [
     path("create/", CreateClient.as_view(), name="create-client"),
 ]
 
+overview_urls = [
+    path("stats/", OverviewStats.as_view(), name="overview-stats"),
+]
+
 urlpatterns = [
   path('visitors/', include(visitor_urls)), 
-  path('client/', include(client_urls))
+  path('client/', include(client_urls)),
+  path('overview/', include(overview_urls)),
 ]

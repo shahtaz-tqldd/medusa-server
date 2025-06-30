@@ -1,7 +1,11 @@
+from datetime import timedelta
 from django_filters.rest_framework import DjangoFilterBackend
+from django.utils.timezone import now
+from django.db.models import Sum
 
 # restframework utils
 from rest_framework import generics, permissions, status
+from rest_framework.views import APIView
 from rest_framework.filters import SearchFilter, OrderingFilter
 
 # helpers
@@ -12,6 +16,8 @@ from base.helpers.response import APIResponse
 
 # models
 from base.models import Visitor, Client
+from blogs.models import Blog
+from chat.models import Conversation
 
 # serializers
 from base.v1.serializers import (
@@ -142,4 +148,70 @@ class  ClientList(generics.ListAPIView):
         return APIResponse.success(
             data=data, 
             message=res_msg.CLIENT_LIST[self.RES_LANG]
+        )
+
+
+class OverviewStats(APIView):
+    """API view to get overview stats"""
+    RES_LANG = "en"
+
+    def get(self, request, *args, **kwargs):
+        today = now()
+        start_of_month = today.replace(day=1)
+
+        # 1. Visitors
+        total_visitors = Visitor.objects.count()
+        visitors_this_month = Visitor.objects.filter(last_visit__gte=start_of_month).count()
+
+        # Rolling 10 weekly cycles
+        visitor_cycles = []
+        for i in range(10):
+            end_date = today - timedelta(days=i * 7)
+            start_date = end_date - timedelta(days=6)
+            count = Visitor.objects.filter(last_visit__date__range=(start_date, end_date)).count()
+            visitor_cycles.append({
+                "cycle": 10 - i,
+                "start_date": str(start_date),
+                "end_date": str(end_date),
+                "visitor_count": count
+            })
+
+        visitor_cycles.reverse()
+
+        # 2. Conversations
+        total_conversations = Conversation.objects.count()
+        meetings_scheduled = Conversation.objects.filter(is_meeting_scheduled=True).count()
+
+        # 3. Clients / Proposals
+        total_proposals = Client.objects.count()
+        onboarded_clients = Client.objects.filter(is_onboarded=True).count()
+
+        # 4. Blogs
+        total_blogs = Blog.objects.count()
+        view_count = Blog.objects.aggregate(view_count=Sum('view_count'))['view_count'] or 0
+
+        # Response data
+        data = {
+            "visitors": {
+                "total": total_visitors,
+                "this_month": visitors_this_month,
+                "cycles": visitor_cycles
+            },
+            "conversations": {
+                "total": total_conversations,
+                "meetings_scheduled": meetings_scheduled
+            },
+            "proposals": {
+                "total": total_proposals,
+                "onboarded_clients": onboarded_clients
+            },
+            "blogs": {
+                "total": total_blogs,
+                "total_reads": view_count
+            }
+        }
+
+        return APIResponse.success(
+            data=data,
+            message=res_msg.OVERVIEW_STATS[self.RES_LANG]
         )
