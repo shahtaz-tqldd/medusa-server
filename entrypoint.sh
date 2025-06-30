@@ -56,7 +56,7 @@ if [ "$APP_ENV" = "prod" ]; then
         --access-logfile - \
         --error-logfile - \
         --capture-output \
-        myproject.wsgi:application
+        medusa.wsgi:application
 else
     echo "Starting development server"
     python manage.py runserver 0.0.0.0:5000
