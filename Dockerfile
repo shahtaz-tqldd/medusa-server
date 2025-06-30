@@ -1,22 +1,32 @@
-FROM python:3.12-slim
+FROM python:3.12-slim 
 
-ENV PYTHONUNBUFFERED 1
+ENV PYTHONUNBUFFERED=1 
 
-WORKDIR /app
-ADD ./requirements.txt /app/requirements.txt
+WORKDIR /app 
 
-RUN pip install setuptools
-RUN apt-get update && apt-get install build-essential binutils libproj-dev gdal-bin curl -y
+# Copy requirements first for better layer caching
+COPY requirements.txt .
 
-RUN pip3 install -U pip
+# Install system dependencies and Python packages in one layer
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        build-essential \
+        binutils \
+        libproj-dev \
+        gdal-bin \
+        curl \
+        netcat-openbsd && \
+    pip install --no-cache-dir setuptools && \
+    pip install --no-cache-dir -r requirements.txt && \
+    apt-get purge -y build-essential && \
+    apt-get autoremove -y && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
-RUN pip install -r requirements.txt
-RUN apt-get --purge autoremove build-essential -y
-
-COPY . /app
-COPY entrypoint.sh /usr/local/bin
+# Copy application code
+COPY . .
+COPY entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
-CMD ["/usr/local/bin/entrypoint.sh"] 
-
 EXPOSE 5000
+CMD ["/usr/local/bin/entrypoint.sh"]
