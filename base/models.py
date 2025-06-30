@@ -26,9 +26,6 @@ class Visitor(models.Model):
     visit_count = models.PositiveIntegerField(default=1)
     total_time_spent = models.DurationField(default=timezone.timedelta)
     
-    # Tracking cookie for anonymous visitors
-    cookie_id = models.CharField(max_length=64, blank=True, null=True)
-    
     class Meta:
         verbose_name = 'Visitor'
         verbose_name_plural = 'Visitors'

@@ -1,6 +1,6 @@
 from django.urls import path, include
 from .views import (
-  CreateVisitor, 
+  CreateOrUpdateVisitor, 
   VisitorList, 
   ClientList, 
   CreateClient,
@@ -8,7 +8,7 @@ from .views import (
 
 visitor_urls = [
     path("list/", VisitorList.as_view(), name="visitor-list"),
-    path("create/", CreateVisitor.as_view(), name="create-visitor"),
+    path("init/", CreateOrUpdateVisitor.as_view(), name="create-or-visitor"),
 ]
 
 client_urls = [

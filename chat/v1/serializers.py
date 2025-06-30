@@ -7,16 +7,18 @@ from chat.models import Message, Conversation
 from base.models import Visitor
 
 from chat.choices import MessageSenderChoice
-from chat.helpers.ai_response import generate_ai_response
-from chat.helpers.summarize import summarize_conversation
+from chat.helpers.ai_response import process_portfolio_chat
+
+import logging
+logger = logging.getLogger(__name__)
 
 MAX_TITLE_LENGTH = 40
 
 class MessageCreateSerializer(serializers.Serializer):
-    """Serializer to create a new message and AI response within a conversation."""
+    """Serializer for Create Message and save conversation summary"""
     
     visitor_id = serializers.UUIDField(required=True)
-    query = serializers.CharField(required=True)
+    query = serializers.CharField(required=True, max_length=1000)
     
     def validate_visitor_id(self, value):
         try:
@@ -24,6 +26,11 @@ class MessageCreateSerializer(serializers.Serializer):
             return visitor
         except Visitor.DoesNotExist:
             raise serializers.ValidationError(_("Visitor not found"))
+    
+    def validate_query(self, value):
+        if not value.strip():
+            raise serializers.ValidationError(_("Query cannot be empty"))
+        return value.strip()
     
     def create(self, validated_data):
         visitor = validated_data.get('visitor_id')
@@ -37,7 +44,11 @@ class MessageCreateSerializer(serializers.Serializer):
             # Get existing or create new conversation
             conversation = None
             if conversation_id:
-                conversation = Conversation.objects.filter(id=conversation_id, user=visitor).first()
+                try:
+                    conversation = Conversation.objects.get(id=conversation_id, user=visitor)
+                except Conversation.DoesNotExist:
+                    # Invalid conversation_id provided, create new conversation
+                    pass
             
             if not conversation:
                 conversation = Conversation.objects.create(user=visitor, title=title)
@@ -49,32 +60,80 @@ class MessageCreateSerializer(serializers.Serializer):
                 content=query
             )
 
-            # Generate AI response
-            ai_response_text = generate_ai_response(
-                user_query=query, 
-                previous_history=conversation.summary
-            )
+            try:
+                # Process chat using the new agent
+                chat_result = process_portfolio_chat(
+                    user_query=query, 
+                    conversation_summary=conversation.summary or ""
+                )
 
-            # Create AI response message
-            ai_message = Message.objects.create(
-                conversation=conversation,
-                sender=MessageSenderChoice.AI,
-                content=ai_response_text
-            )
+                if chat_result['success']:
+                    ai_response_text = chat_result['user_response']
+                    updated_summary = chat_result['conversation_summary']
+                    
+                    # Create AI response message
+                    ai_message = Message.objects.create(
+                        conversation=conversation,
+                        sender=MessageSenderChoice.AI,
+                        content=ai_response_text
+                    )
 
-            # Summarize conversation asynchronously
-            summarize_conversation.delay(
-                conversation_id=conversation.id, 
-                user_query=query, 
-                ai_response=ai_response_text, 
-                previous_history=conversation.summary
-            )
+                    # Update conversation summary
+                    conversation.summary = updated_summary
+                    conversation.save(update_fields=['summary'])
 
-            return {
-                'conversation_id': conversation.id,
-                'user_message': user_message,
-                'ai_response': ai_message
-            }
+                    # Return in the format expected by your API view
+                    return {
+                        'conversation_id': conversation.id,
+                        'user_message': user_message,
+                        'ai_response': ai_message,
+                        'success': True
+                    }
+                else:
+                    # AI processing failed, create error response
+                    error_response = chat_result.get('user_response', 'I apologize, but I encountered an issue processing your request. Please try again.')
+                    
+                    ai_message = Message.objects.create(
+                        conversation=conversation,
+                        sender=MessageSenderChoice.AI,
+                        content=error_response
+                    )
+
+                    # Still return success=True since we created messages successfully
+                    # The error is handled gracefully with a user-friendly message
+                    return {
+                        'conversation_id': conversation.id,
+                        'user_message': user_message,
+                        'ai_response': ai_message,
+                        'success': True,
+                        'ai_error': chat_result.get('error')  # Optional field for logging
+                    }
+
+            except Exception as e:
+                # Critical error handling - this should rarely happen
+                logger.exception(f"Critical error in message creation: {e}")
+                
+                # Try to create a fallback response
+                try:
+                    fallback_response = "I'm sorry, I'm experiencing technical difficulties. Please try again later."
+                    ai_message = Message.objects.create(
+                        conversation=conversation,
+                        sender=MessageSenderChoice.AI,
+                        content=fallback_response
+                    )
+                    
+                    return {
+                        'conversation_id': conversation.id,
+                        'user_message': user_message,
+                        'ai_response': ai_message,
+                        'success': True,
+                        'critical_error': str(e)  # For logging purposes
+                    }
+                except Exception as fallback_error:
+                    # If even fallback fails, raise the original exception
+                    logger.critical(f"Fallback message creation failed: {fallback_error}")
+                    raise serializers.ValidationError(_("Unable to process your message. Please try again."))
+                
 class ConversationSerializer(serializers.ModelSerializer):
     """Serializer to return conversation list with conversation id"""
     last_message = serializers.SerializerMethodField()

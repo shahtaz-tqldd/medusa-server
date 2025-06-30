@@ -18,7 +18,7 @@ class CreateMessage(generics.CreateAPIView):
     """API View to create new message"""
     RES_LANG = 'en'
     permission_classes = [permissions.AllowAny]
-    serializer_class = MessageCreateSerializer
+    serializer_class = MessageCreateSerializer  # No changes needed here!
     
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -41,7 +41,6 @@ class CreateMessage(generics.CreateAPIView):
             message=res_msg.CHAT_MESSAGE_CREATED[self.RES_LANG], 
             status=status.HTTP_201_CREATED
         )
-
 
 class ConversationList(generics.ListAPIView):
     """API View to get all conversation list"""
