@@ -154,6 +154,7 @@ class  ClientList(generics.ListAPIView):
 class OverviewStats(APIView):
     """API view to get overview stats"""
     RES_LANG = "en"
+    permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
         today = now()

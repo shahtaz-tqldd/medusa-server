@@ -81,3 +81,4 @@ db.sqlite3-journal
 
 # Static files (e.g., collected static files)
 staticfiles/
+.prod-docker

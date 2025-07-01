@@ -44,7 +44,7 @@ class PortfolioChatAgent:
         
         --- Business Inquiries & Next Steps ---
         For business inquiries, potential collaborations, or in-depth discussions, provide specific details about Shahtaz's relevant experience and encourage scheduling a meeting.
-        Meeting Link: https://example.calendly.com/shahtaz/.
+        Meeting Link: https://calendly.com/shahtaz67
         """
 
     def _create_conversation_prompt(self, user_query: str, conversation_summary: str = ""):
