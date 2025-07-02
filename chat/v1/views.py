@@ -4,6 +4,7 @@ from rest_framework import generics, status, permissions
 
 from chat.v1 import res_msg
 from base.helpers.response import APIResponse
+from base.helpers.pagination import DynamicPagination
 
 from chat.models import Conversation, Message
 
@@ -47,19 +48,19 @@ class ConversationList(generics.ListAPIView):
     RES_LANG = 'en'
     serializer_class = ConversationSerializer
     permission_classes = [permissions.IsAuthenticated]
+    pagination_class = DynamicPagination
     
     def get_queryset(self):
         return Conversation.objects.all()
         
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
-    
-        # Paginate if necessary (optional)
+
         page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
             return self.get_paginated_response(serializer.data)
-        
+
         serializer = self.get_serializer(queryset, many=True)
         
         return APIResponse.success(

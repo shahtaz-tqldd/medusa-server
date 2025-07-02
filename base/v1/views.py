@@ -10,7 +10,7 @@ from rest_framework.filters import SearchFilter, OrderingFilter
 
 # helpers
 from base.v1 import res_msg
-from base.helpers.pagination import CustomPagination
+from base.helpers.pagination import CustomPagination, DynamicPagination
 from base.helpers.filters import VisitorFilter, ClientFilter
 from base.helpers.response import APIResponse
 
@@ -67,7 +67,7 @@ class VisitorList(generics.ListAPIView):
     RES_LANG = "en"
     serializer_class = VisitorSerializer
     permission_classes = [permissions.IsAuthenticated]
-    pagination_class = CustomPagination
+    pagination_class = DynamicPagination
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_class = VisitorFilter
     search_fields = ['city', 'country', 'device_name', 'device_type']

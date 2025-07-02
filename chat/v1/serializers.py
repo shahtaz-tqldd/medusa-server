@@ -134,15 +134,43 @@ class MessageCreateSerializer(serializers.Serializer):
                     logger.critical(f"Fallback message creation failed: {fallback_error}")
                     raise serializers.ValidationError(_("Unable to process your message. Please try again."))
                 
+
+class VisitorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Visitor
+        fields = [
+            'ip_address',
+            'first_visit',
+            'last_visit',
+            'device_name',
+            'device_type',
+            'latitude',
+            'longitude',
+            'country',
+            'city',
+            'visit_count',
+            'total_time_spent'
+        ]
+
+                
 class ConversationSerializer(serializers.ModelSerializer):
     """Serializer to return conversation list with conversation id"""
     last_message = serializers.SerializerMethodField()
     total_message = serializers.SerializerMethodField()
-    
+    user = VisitorSerializer()  # nested serializer
+
     class Meta:
         model = Conversation
-        fields = ['id', 'title', 'created_at', 'last_message', 'total_message']
-    
+        fields = [
+            'id',
+            'title',
+            'created_at',
+            'last_message',
+            'total_message',
+            'summary',
+            'user',  # <- added here
+        ]
+
     def get_last_message(self, obj):
         last_msg = obj.messages.order_by('-created_at').first()
         if last_msg:
@@ -151,9 +179,10 @@ class ConversationSerializer(serializers.ModelSerializer):
                 'sender': last_msg.sender
             }
         return None
-    
+
     def get_total_message(self, obj):
         return obj.messages.count()
+
 
 
 class MessageSerializer(serializers.ModelSerializer):
