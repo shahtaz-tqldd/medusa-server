@@ -8,8 +8,8 @@ from .views import (
 )
 
 visitor_urls = [
-    path("list/", VisitorList.as_view(), name="visitor-list"),
-    path("init/", CreateOrUpdateVisitor.as_view(), name="create-or-visitor"),
+    path("list", VisitorList.as_view(), name="visitor-list"),
+    path("init", CreateOrUpdateVisitor.as_view(), name="Create or Update Visitor"),
 ]
 
 client_urls = [
@@ -18,7 +18,7 @@ client_urls = [
 ]
 
 overview_urls = [
-    path("stats/", OverviewStats.as_view(), name="overview-stats"),
+    path("stats", OverviewStats.as_view(), name="overview-stats"),
 ]
 
 urlpatterns = [

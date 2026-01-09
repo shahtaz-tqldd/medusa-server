@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 from datetime import timedelta
+from corsheaders.defaults import default_headers
 from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -13,8 +14,12 @@ ALLOWED_HOSTS = [host.strip() for host in (os.getenv('ALLOWED_HOSTS') or '').spl
 
 # cors
 CORS_ORIGIN_ALLOW_ALL = False
-CORS_ALLOW_HEADERS = '*'
+CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [origin.strip() for origin in (os.getenv('ALLOWED_ORIGINS') or '').split(',') if origin.strip()]
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    "content-type",
+]
+
 
 ROOT_URLCONF = 'medusa.urls'
 
@@ -22,8 +27,8 @@ ROOT_URLCONF = 'medusa.urls'
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(hours=4),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
-    "ROTATE_REFRESH_TOKENS": False,
-    "BLACKLIST_AFTER_ROTATION": True,
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": False,
     "AUTH_HEADER_TYPES": ("Bearer",),
 }
 
@@ -33,6 +38,11 @@ PGDB_USER = os.getenv('PGDB_USER', 'medusa_owner')
 PGDB_PASSWORD = os.getenv('PGDB_PASSWORD', 'cleanCodeMyth')
 PGDB_HOST = os.getenv('PGDB_HOST', 'db')
 PGDB_PORT = os.getenv('PGDB_PORT', '5431')
+
+# cloudinary
+CLOUDINARY_CLOUDE_NAME = os.getenv('CLOUDINARY_CLOUDE_NAME', None)
+CLOUDINARY_API_KEY = os.getenv('CLOUDINARY_API_KEY', None)
+CLOUDINARY_API_SECRET = os.getenv('CLOUDINARY_API_SECRET', None)
 
 # email
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"

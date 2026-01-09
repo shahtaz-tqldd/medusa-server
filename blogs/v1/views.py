@@ -53,7 +53,6 @@ class CreateNewBlog(generics.CreateAPIView):
             status=status.HTTP_201_CREATED
         )
 
-
 class BlogList(generics.ListAPIView):
     """API View to get blog list with pagination, filtering and search"""
     serializer_class = BlogListSerializer
@@ -69,17 +68,29 @@ class BlogList(generics.ListAPIView):
     def get_queryset(self):
         # By default, only show published blogs
         queryset = Blog.objects.filter(status='published')
-        
+
         # If user is authenticated and has requested their drafts
-        if self.request.user.is_authenticated and self.request.query_params.get('include_drafts') == 'true':
+        if (
+            self.request.user.is_authenticated
+            and self.request.query_params.get('include_drafts') == 'true'
+        ):
             queryset = Blog.objects.filter(
-                Q(status='published') | Q(author=self.request.user, status='draft')
+                Q(status='published') |
+                Q(author=self.request.user, status='draft')
             )
-            
-        # Add prefetch related to optimize queries
-        queryset = queryset.select_related('author').prefetch_related('category', 'tags')
-        
+
+        # Exclude a specific blog by slug (optional param)
+        exclude_slug = self.request.query_params.get('exclude_slug')
+        if exclude_slug:
+            queryset = queryset.exclude(slug=exclude_slug)
+
+        # Optimize queries
+        queryset = queryset.select_related('author').prefetch_related(
+            'category', 'tags'
+        )
+
         return queryset
+
     
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
@@ -98,7 +109,6 @@ class BlogList(generics.ListAPIView):
             message=res_msg.BLOG_LIST[self.RES_LANG]
         )
 
-
 class BlogDetails(generics.RetrieveAPIView):
     """API View to get blog details with id"""
     
@@ -106,28 +116,37 @@ class BlogDetails(generics.RetrieveAPIView):
     RES_LANG = "en"
     
     def get_queryset(self):
-        return Blog.objects.all()
+        return Blog.objects.prefetch_related(
+            'content_blocks__text_content',
+            'content_blocks__heading_content',
+            'content_blocks__code_content',
+            'content_blocks__image_content',
+            'content_blocks__quote_content',
+            'content_blocks__list_content__items'
+        ).all()
     
     def get_object(self):
-        lookup_value = self.kwargs.get('id')
+        lookup_value = self.kwargs.get('slug')
         try:
-            blog = Blog.objects.get(id=lookup_value)
-            # Increment view count
-            Blog.objects.filter(id=lookup_value).update(view_count=F('view_count') + 1)
+            blog = self.get_queryset().get(slug=lookup_value)
+            Blog.objects.filter(slug=lookup_value).update(view_count=F('view_count') + 1)
             return blog
         
         except Blog.DoesNotExist:
-            return APIResponse.error(message=res_msg.BLOG_NOT_FOUND[self.RES_LANG])
+            raise ValueError(detail=res_msg.BLOG_NOT_FOUND[self.RES_LANG])
     
     def retrieve(self, request, *args, **kwargs):
-        instance = self.get_object()
-        serializer = self.get_serializer(instance)
+        try:
+            instance = self.get_object()
+            serializer = self.get_serializer(instance)
+            
+            return APIResponse.success(
+                data=serializer.data,
+                message=res_msg.BLOG_DETAILS[self.RES_LANG]
+            )
         
-        return APIResponse.success(
-            data=serializer.data,
-            message=res_msg.BLOG_DETAILS[self.RES_LANG]
-        )
-
+        except Blog.DoesNotExist:
+            return APIResponse.error(message=res_msg.BLOG_NOT_FOUND[self.RES_LANG])
 
 class UpdateBlogDetails(generics.UpdateAPIView):
     """API View to update blog with id"""
@@ -168,7 +187,6 @@ class UpdateBlogDetails(generics.UpdateAPIView):
     def partial_update(self, request, *args, **kwargs):
         kwargs['partial'] = True
         return self.update(request, *args, **kwargs)
-
 
 class DeleteBlog(generics.DestroyAPIView):
     """API View to delete blog with id"""

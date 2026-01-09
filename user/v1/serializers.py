@@ -60,23 +60,20 @@ class LoginSerializer(serializers.Serializer):
     password = serializers.CharField(write_only=True)
 
     def validate(self, data):
-        email = data.get("email")
-        password = data.get("password")
-
-        user = authenticate(username=email, password=password)
+        user = authenticate(
+            username=data["email"],
+            password=data["password"]
+        )
 
         if not user:
-            raise serializers.ValidationError({"error": "Invalid Credentials"})
-
-        if not user.is_active:
-            raise serializers.ValidationError({"error": "User is disabled"})
+            raise serializers.ValidationError("Invalid credentials")
 
         refresh = RefreshToken.for_user(user)
 
-        return {
-            "access_token": str(refresh.access_token),
-            "refresh_token": str(refresh),
-        }
+        self.context["access_token"] = str(refresh.access_token)
+        self.context["refresh_token"] = str(refresh)
+
+        return {}
 
 
 class ForgetPasswordSerializer(serializers.Serializer):

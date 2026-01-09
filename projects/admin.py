@@ -3,13 +3,13 @@ from .models import Project, ProjectImage
 
 @admin.register(Project)
 class ProjectAdmin(admin.ModelAdmin):
-    search_fields = ['name', 'type', 'description']
+    search_fields = ['title', 'type', 'description']
     ordering = ['-created_at']
-    list_display = ("name", "type", "created_at",)
+    list_display = ("title", "type", "created_at",)
 
 
 @admin.register(ProjectImage)
 class ProjectImageAdmin(admin.ModelAdmin):
-    search_fields = ['project__name']
+    search_fields = ['project__title']
     ordering = ['-created_at']
-    list_display = ("project__name", "created_at",)
+    list_display = ("project__title", "created_at",)

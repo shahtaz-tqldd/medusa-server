@@ -12,6 +12,7 @@ THIRD_PARTY_APPS = [
     'corsheaders',
     'rest_framework',
     'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist'
 ]
 
 DEVELOPED_APPS = [
