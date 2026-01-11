@@ -17,3 +17,7 @@ PROJECT_UPDATED = {
 PROJECT_DELETED = {
     "en": "Project has been deleted!"
 }
+
+PROJECT_NOT_FOUND = {
+    "en": "Project does not exist!"
+}

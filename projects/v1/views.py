@@ -1,6 +1,7 @@
 from rest_framework import generics, status, permissions
 from rest_framework.parsers import MultiPartParser, FormParser
 from django_filters.rest_framework import DjangoFilterBackend
+from django.db.models import F
 
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.filters import SearchFilter, OrderingFilter
@@ -18,6 +19,7 @@ from projects.models import Project
 from projects.v1.serializers import (
     CreateProjectSerializer,
     ProjectDetailsSerializer,
+    ProjectBasicDetailsSerializer,
     UpdateProjectSerializer
 )
 
@@ -27,7 +29,7 @@ class CreateNewProject(generics.CreateAPIView):
     """
     RES_LANG = "en"
     serializer_class = CreateProjectSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
 
     def create(self, request, *args, **kwargs):
@@ -43,15 +45,14 @@ class CreateNewProject(generics.CreateAPIView):
         )
 
 
-
 class ProjectList(generics.ListAPIView):
     """API View to get blog list with pagination, filtering and search"""
-    serializer_class = ProjectDetailsSerializer
+    serializer_class = ProjectBasicDetailsSerializer
     permission_classes = [AllowAny]
     pagination_class = CustomPagination
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_class = ProjectFilter
-    search_fields = ['title', 'description']
+    search_fields = ['title']
     ordering_fields = ['created_at', 'title']
     ordering = ['-created_at']
     RES_LANG = "en"
@@ -89,6 +90,16 @@ class ProjectDetails(generics.RetrieveAPIView):
     serializer_class = ProjectDetailsSerializer
     queryset = Project.objects.all()
     lookup_field = 'id'
+
+    def get_object(self):
+        lookup_value = self.kwargs.get('id')
+        try:
+            project = self.get_queryset().get(id=lookup_value)
+            Project.objects.filter(id=lookup_value).update(view_count=F('view_count') + 1)
+            return project
+        
+        except Project.DoesNotExist:
+            raise ValueError(detail=res_msg.PROJECT_NOT_FOUND[self.RES_LANG])
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()

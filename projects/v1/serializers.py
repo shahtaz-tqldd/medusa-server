@@ -185,6 +185,31 @@ class ProjectDetailsSerializer(serializers.ModelSerializer):
         ]
 
 
+class ProjectBasicDetailsSerializer(serializers.ModelSerializer):
+    live_link = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Project
+        fields = [
+            'id',
+            'title',
+            'featured_image_url',
+            'type',
+            'live_link',
+            'view_count',
+            'created_at'
+        ]
+    
+    def get_live_link(self, obj):
+        """
+        Get the URL of the link with type 'live' if it exists
+        """
+        live_link = obj.links.filter(type='live').first()
+        if live_link:
+            return live_link.url
+        return None
+
+
 class UpdateProjectSerializer(serializers.ModelSerializer):
     # File fields for upload
     featured_image = serializers.ImageField(write_only=True, required=False)

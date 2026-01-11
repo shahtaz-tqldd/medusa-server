@@ -59,5 +59,5 @@ if [ "$APP_ENV" = "prod" ]; then
         medusa.wsgi:application
 else
     echo "Starting development server"
-    python manage.py runserver 0.0.0.0:5000
+    python manage.py runserver 0.0.0.0:5050
 fi
