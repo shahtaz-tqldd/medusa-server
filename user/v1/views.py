@@ -73,12 +73,14 @@ class Login(generics.GenericAPIView):
             message=USER_LOGIN[self.RESPONSE_LANGUAGE],
         )
 
+        IS_PROD = not settings.DEBUG
+
         response.set_cookie(
             key="access_token",
             value=access_token,
             httponly=True,
-            secure=False,
-            samesite="Lax",
+            secure=IS_PROD,
+            samesite="None" if IS_PROD else "Lax",
             path="/",
         )
 
@@ -86,8 +88,8 @@ class Login(generics.GenericAPIView):
             key="refresh_token",
             value=refresh_token,
             httponly=True,
-            secure=False,
-            samesite="Lax",
+            secure=IS_PROD,
+            samesite="None" if IS_PROD else "Lax",
             path="/",
         )
 
@@ -124,12 +126,14 @@ class RefreshToken(TokenRefreshView):
             }
         )
 
+        IS_PROD = not settings.DEBUG
+
         response.set_cookie(
             key="access_token",
             value=access_token,
             httponly=True,
-            secure=not settings.DEBUG,
-            samesite="Lax",
+            secure=IS_PROD,
+            samesite="None" if IS_PROD else "Lax",
             path="/",
             max_age=60 * 5,
         )
@@ -139,8 +143,8 @@ class RefreshToken(TokenRefreshView):
                 key="refresh_token",
                 value=new_refresh_token,
                 httponly=True,
-                secure=not settings.DEBUG,
-                samesite="Lax",
+                secure=IS_PROD,
+                samesite="None" if IS_PROD else "Lax",
                 path="/",
                 max_age=60 * 60 * 24 * 7,
             )
