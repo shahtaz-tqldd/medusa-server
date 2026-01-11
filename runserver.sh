@@ -20,4 +20,4 @@ docker compose -f docker-compose.prod.yml down --remove-orphans
 
 # 3. Start the stack in background
 echo "Starting docker services..."
-docker compose -f docker-compose.yml up -d --build --remove-orphans
+docker compose -f docker-compose.prod.yml up -d --build --remove-orphans
