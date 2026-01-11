@@ -10,7 +10,7 @@ services:
     env_file:
       - .env
     ports:
-      - "500:5000"
+      - "5000:5000"
     depends_on:
       - medusa_db
     networks:
