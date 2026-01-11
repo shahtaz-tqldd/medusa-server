@@ -74,6 +74,7 @@ class Login(generics.GenericAPIView):
         )
 
         IS_PROD = not settings.DEBUG
+        cookie_domain = ".shahtaz.dev" if IS_PROD else None
 
         response.set_cookie(
             key="access_token",
@@ -81,6 +82,7 @@ class Login(generics.GenericAPIView):
             httponly=True,
             secure=IS_PROD,
             samesite="None" if IS_PROD else "Lax",
+            domain=cookie_domain,
             path="/",
         )
 
@@ -90,11 +92,11 @@ class Login(generics.GenericAPIView):
             httponly=True,
             secure=IS_PROD,
             samesite="None" if IS_PROD else "Lax",
+            domain=cookie_domain,
             path="/",
         )
 
         return response
-
 
 
 class RefreshToken(TokenRefreshView):
@@ -127,6 +129,7 @@ class RefreshToken(TokenRefreshView):
         )
 
         IS_PROD = not settings.DEBUG
+        cookie_domain = ".shahtaz.dev" if IS_PROD else None
 
         response.set_cookie(
             key="access_token",
@@ -135,6 +138,7 @@ class RefreshToken(TokenRefreshView):
             secure=IS_PROD,
             samesite="None" if IS_PROD else "Lax",
             path="/",
+            domain=cookie_domain,
             max_age=60 * 5,
         )
 
@@ -146,6 +150,7 @@ class RefreshToken(TokenRefreshView):
                 secure=IS_PROD,
                 samesite="None" if IS_PROD else "Lax",
                 path="/",
+                domain=cookie_domain,
                 max_age=60 * 60 * 24 * 7,
             )
 
