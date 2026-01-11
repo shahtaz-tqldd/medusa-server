@@ -1,14 +1,23 @@
 #!/bin/sh
 
-# clean docker
-sudo docker system prune --force
+set -e
 
-# create docker network
-echo "Creating Docker network"
-sudo docker network create medusa-network
+echo "Starting local development environment"
 
-echo "closing dev docker"
-sudo docker compose -f docker-compose.dev.yml down
+# 1. Create network only if needed
+NETWORK_NAME="medusa-network"
 
-echo "running docker compose for webserver"
-sudo docker compose -f docker-compose.dev.yml up --build --remove-orphans
+if ! docker network ls | grep -q "$NETWORK_NAME"; then
+  echo "Creating Docker network: $NETWORK_NAME"
+  docker network create $NETWORK_NAME
+else
+  echo "Docker network '$NETWORK_NAME' already exists"
+fi
+
+# 2. Stop existing containers gracefully
+echo "Stopping existing docker-compose stack..."
+docker compose -f docker-compose.yml down --remove-orphans
+
+# 3. Start the stack in background (recommended for dev)
+echo "Starting docker services..."
+docker compose -f docker-compose.yml up --build --remove-orphans

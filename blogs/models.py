@@ -55,7 +55,8 @@ class Blog(models.Model):
     
     # Meta
     excerpt = models.TextField(blank=True, null=True, help_text=_("Short description for SEO and previews"))
-    featured_image = models.ImageField(upload_to='blog/featured_images/', blank=True, null=True)
+    featured_image = models.URLField(max_length=500, blank=True, null=True)
+    featured_image_public_id = models.CharField(max_length=255, blank=True, null=True)
     reading_time = models.PositiveIntegerField(default=0, help_text=_("Estimated reading time in minutes"))
     view_count = models.PositiveIntegerField(default=0)
     
@@ -137,13 +138,14 @@ class CodeBlock(models.Model):
 class ImageBlock(models.Model):
     """Model for images and diagrams"""
     block = models.OneToOneField(ContentBlock, on_delete=models.CASCADE, related_name='image_content')
-    image = models.ImageField(upload_to='blog/content_images/')
+    image = models.URLField(max_length=500)
     caption = models.CharField(max_length=255, blank=True, null=True)
     alt_text = models.CharField(max_length=255, blank=True, null=True, help_text=_("Alternative text for accessibility"))
+    cloudinary_public_id = models.CharField(max_length=255, blank=True, null=True)
     
     def __str__(self):
         return f"Image: {self.caption or 'Untitled'}"
-
+    
 class QuoteBlock(models.Model):
     """Model for quote content"""
     block = models.OneToOneField(ContentBlock, on_delete=models.CASCADE, related_name='quote_content')

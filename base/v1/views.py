@@ -1,7 +1,8 @@
-from datetime import timedelta
+from datetime import date, timedelta
 from django_filters.rest_framework import DjangoFilterBackend
 from django.utils.timezone import now
 from django.db.models import Sum
+from django.db.models import Count, Q
 
 # restframework utils
 from rest_framework import generics, permissions, status
@@ -166,18 +167,53 @@ class OverviewStats(APIView):
 
         # Rolling 10 weekly cycles
         visitor_cycles = []
-        for i in range(10):
-            end_date = today - timedelta(days=i * 7)
-            start_date = end_date - timedelta(days=6)
-            count = Visitor.objects.filter(last_visit__date__range=(start_date, end_date)).count()
+        today = date.today()
+        year = today.year
+        month = today.month
+
+        for i in range(7, -1, -1):  # last 8 months
+            # Calculate month and year for the cycle
+            cycle_month = month - i
+            cycle_year = year
+            # handle year change
+            if cycle_month <= 0:
+                cycle_month += 12
+                cycle_year -= 1
+
+            # Start date of the month
+            start_date = date(cycle_year, cycle_month, 1)
+            
+            # End date of the month: tricky part, next month minus one day
+            if cycle_month == 12:
+                next_month_start = date(cycle_year + 1, 1, 1)
+            else:
+                next_month_start = date(cycle_year, cycle_month + 1, 1)
+            end_date = next_month_start - timedelta(days=1)
+
+            # Count visitors in that month
+            count = Visitor.objects.filter(
+                last_visit__date__gte=start_date,
+                last_visit__date__lte=end_date
+            ).count()
+
             visitor_cycles.append({
-                "cycle": 10 - i,
-                "start_date": str(start_date),
-                "end_date": str(end_date),
+                "month": start_date.strftime("%B %Y"),
                 "visitor_count": count
             })
+        country_stats = (
+            Visitor.objects
+            .exclude(country__isnull=True)
+            .exclude(country__exact="")
+            .values("country")
+            .annotate(visitor_count=Count("id"))
+            .order_by("-visitor_count")
+        )
 
-        visitor_cycles.reverse()
+        device_stats = Visitor.objects.aggregate(
+            desktop=Count("id", filter=Q(device_type="Desktop")),
+            mobile=Count("id", filter=~Q(device_type="Desktop"))
+        )
+
 
         # 2. Conversations
         total_conversations = Conversation.objects.count()
@@ -196,7 +232,9 @@ class OverviewStats(APIView):
             "visitors": {
                 "total": total_visitors,
                 "this_month": visitors_this_month,
-                "cycles": visitor_cycles
+                "month_wise": visitor_cycles,
+                "device_wise": device_stats,
+                "country_wise": country_stats,
             },
             "conversations": {
                 "total": total_conversations,

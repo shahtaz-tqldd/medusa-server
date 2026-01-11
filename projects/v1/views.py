@@ -1,9 +1,17 @@
 from rest_framework import generics, status, permissions
+from rest_framework.parsers import MultiPartParser, FormParser
+from django_filters.rest_framework import DjangoFilterBackend
+from django.db.models import F
+
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.filters import SearchFilter, OrderingFilter
+
 
 # helpers
 from projects.v1 import res_msg
 from base.helpers.response import APIResponse
-
+from base.helpers.pagination import CustomPagination
+from projects.helpers.project_filter import ProjectFilter
 # models
 from projects.models import Project
 
@@ -11,6 +19,8 @@ from projects.models import Project
 from projects.v1.serializers import (
     CreateProjectSerializer,
     ProjectDetailsSerializer,
+    ProjectBasicDetailsSerializer,
+    UpdateProjectSerializer
 )
 
 class CreateNewProject(generics.CreateAPIView):
@@ -19,7 +29,8 @@ class CreateNewProject(generics.CreateAPIView):
     """
     RES_LANG = "en"
     serializer_class = CreateProjectSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -35,23 +46,40 @@ class CreateNewProject(generics.CreateAPIView):
 
 
 class ProjectList(generics.ListAPIView):
-    """
-    API view to get project list
-    """
+    """API View to get blog list with pagination, filtering and search"""
+    serializer_class = ProjectBasicDetailsSerializer
+    permission_classes = [AllowAny]
+    pagination_class = CustomPagination
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_class = ProjectFilter
+    search_fields = ['title']
+    ordering_fields = ['created_at', 'title']
+    ordering = ['-created_at']
     RES_LANG = "en"
-    permission_classes = [permissions.AllowAny]
-    serializer_class = ProjectDetailsSerializer
-    queryset = Project.objects.all()
+    
+    def get_queryset(self):
+        # By default, only show published projects
+        queryset = Project.objects.all()
+        return queryset
 
+    
     def list(self, request, *args, **kwargs):
-        queryset = self.get_queryset()
-        serializer = self.get_serializer(queryset, many=True)
+        queryset = self.filter_queryset(self.get_queryset())
+        
+        # Apply pagination
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            data = self.get_paginated_response(serializer.data).data
+        else:
+            serializer = self.get_serializer(queryset, many=True)
+            data = serializer.data
         
         return APIResponse.success(
-            data=serializer.data,
-            message=res_msg.PROJECT_LIST[self.RES_LANG],
+            data=data, 
+            message=res_msg.PROJECT_LIST[self.RES_LANG]
         )
-    
+
 
 class ProjectDetails(generics.RetrieveAPIView):
     """
@@ -63,6 +91,16 @@ class ProjectDetails(generics.RetrieveAPIView):
     queryset = Project.objects.all()
     lookup_field = 'id'
 
+    def get_object(self):
+        lookup_value = self.kwargs.get('id')
+        try:
+            project = self.get_queryset().get(id=lookup_value)
+            Project.objects.filter(id=lookup_value).update(view_count=F('view_count') + 1)
+            return project
+        
+        except Project.DoesNotExist:
+            raise ValueError(detail=res_msg.PROJECT_NOT_FOUND[self.RES_LANG])
+
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
         serializer = self.get_serializer(instance)
@@ -73,25 +111,27 @@ class ProjectDetails(generics.RetrieveAPIView):
         )
     
 
-class UpdateProjectDetails(generics.UpdateAPIView):
+class UpdateProject(generics.UpdateAPIView):
     """
-    API view to update project details
+    API view to update an existing project
     """
     RES_LANG = "en"
+    serializer_class = UpdateProjectSerializer
     permission_classes = [permissions.IsAuthenticated]
-    serializer_class = ProjectDetailsSerializer
+    parser_classes = [MultiPartParser, FormParser]
     queryset = Project.objects.all()
     lookup_field = 'id'
-    http_method_names = ["patch"]
 
     def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
         instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer)
+        project = serializer.save()
+        project_data = ProjectDetailsSerializer(project).data
 
         return APIResponse.success(
-            data=serializer.data,
+            data=project_data,
             message=res_msg.PROJECT_UPDATED[self.RES_LANG],
             status=status.HTTP_205_RESET_CONTENT,
         )
