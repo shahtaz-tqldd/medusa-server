@@ -11,16 +11,16 @@ echo "Database is ready!"
 echo "Collecting static files"
 python manage.py collectstatic --noinput
 
-# Creating database migrations
-echo "Creating database migrations"
-python manage.py makemigrations --merge --noinput
-
-# Apply database migrations
-echo "Applying database migrations"
-python manage.py migrate --database=default
-
 # Create superuser if it doesn't exist (only in development)
 if [ "$APP_ENV" = "dev" ]; then
+    # Creating database migrations
+    echo "Creating database migrations"
+    python manage.py makemigrations --merge --noinput
+
+    # Apply database migrations
+    echo "Applying database migrations"
+    python manage.py migrate --database=default
+
     echo "Checking for superuser"
     python manage.py shell <<EOF
 from django.contrib.auth import get_user_model
@@ -39,9 +39,18 @@ fi
 
 # Check if running in production
 if [ "$APP_ENV" = "prod" ]; then
+# Creating database migrations
+echo "Creating database migrations"
+python manage.py makemigrations --merge --noinput
+
+# Apply database migrations
+echo "Applying database migrations"
+    
+    echo "Migration running on"
+    python manage.py migrate --noinput
+
     echo "Starting production server with Gunicorn"
-    # Install gunicorn if not in requirements
-    pip install gunicorn
+    
     # Start Gunicorn with optimal settings
     exec gunicorn \
         --bind 0.0.0.0:5000 \
@@ -59,5 +68,5 @@ if [ "$APP_ENV" = "prod" ]; then
         medusa.wsgi:application
 else
     echo "Starting development server"
-    python manage.py runserver 0.0.0.0:5050
+    python manage.py runserver 0.0.0.0:5000
 fi
