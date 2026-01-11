@@ -28,5 +28,5 @@ COPY . .
 COPY entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
-EXPOSE 5050
+EXPOSE 5000
 CMD ["/usr/local/bin/entrypoint.sh"]

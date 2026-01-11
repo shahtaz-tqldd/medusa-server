@@ -5,12 +5,11 @@ services:
       context: .
       dockerfile: Dockerfile
     volumes:
-      - .:/app
       - static_volume:/app/staticfiles
     env_file:
       - .env
     ports:
-      - "500:5000"
+      - "5000:5000"
     depends_on:
       - medusa_db
     networks:
@@ -25,15 +24,13 @@ services:
       - POSTGRES_PASSWORD=${PGDB_PASSWORD}
     volumes:
       - medusa_data:/var/lib/postgresql/data/
-    ports:
-      - "5440:5432"
     networks:
       - medusa-network
 
 networks:
   medusa-network:
-    external: true
 
 volumes:
   medusa_data:
   static_volume:
+  
