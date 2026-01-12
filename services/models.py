@@ -166,9 +166,12 @@ class Achievement(models.Model):
 
     order = models.IntegerField(unique=True, editable=True, null=True, blank=True)
 
+    
     def save(self, *args, **kwargs):
         if self.order is None:
-            last_order = Services.objects.aggregate(models.Max('order'))['order__max']
+            last_order = Achievement.objects.aggregate(
+                max_order=models.Max('order')
+            )['max_order']
             self.order = (last_order or 0) + 1
 
         super().save(*args, **kwargs)

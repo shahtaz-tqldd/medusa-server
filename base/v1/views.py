@@ -19,6 +19,7 @@ from base.helpers.response import APIResponse
 from base.models import Visitor, Client
 from blogs.models import Blog
 from chat.models import Conversation
+from projects.models import Project
 
 # serializers
 from base.v1.serializers import (
@@ -214,7 +215,6 @@ class OverviewStats(APIView):
             mobile=Count("id", filter=~Q(device_type="Desktop"))
         )
 
-
         # 2. Conversations
         total_conversations = Conversation.objects.count()
         meetings_scheduled = Conversation.objects.filter(is_meeting_scheduled=True).count()
@@ -226,6 +226,10 @@ class OverviewStats(APIView):
         # 4. Blogs
         total_blogs = Blog.objects.count()
         view_count = Blog.objects.aggregate(view_count=Sum('view_count'))['view_count'] or 0
+        
+        # 5. Projects
+        total_projects = Project.objects.count()
+        project_view_count = Project.objects.aggregate(view_count=Sum('view_count'))['view_count'] or 0
 
         # Response data
         data = {
@@ -247,6 +251,10 @@ class OverviewStats(APIView):
             "blogs": {
                 "total": total_blogs,
                 "total_reads": view_count
+            },
+            "projects": {
+                "total": total_projects,
+                "total_views": project_view_count
             }
         }
 

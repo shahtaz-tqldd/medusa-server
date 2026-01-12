@@ -13,8 +13,8 @@ app_name = 'auth'
 
 urlpatterns = [
     path("register", CreateNewUser.as_view(), name="create-user"),
-    path("login", Login.as_view(), name="login"),
-    path("refresh", RefreshToken.as_view(), name="token-refresh"),
+    path("login/", Login.as_view(), name="login"),
+    path("refresh/", RefreshToken.as_view(), name="token-refresh"),
     path("user-details", UserDetails.as_view(), name="user-details"),
     path("user-details/update", UpdateUserDetails.as_view(), name="update-user"),
     path("forget-password", ForgotPassword.as_view(), name="forget-password"),
