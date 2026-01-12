@@ -18,7 +18,7 @@ client_urls = [
 ]
 
 overview_urls = [
-    path("stats", OverviewStats.as_view(), name="overview-stats"),
+    path("stats/", OverviewStats.as_view(), name="overview-stats"),
 ]
 
 urlpatterns = [

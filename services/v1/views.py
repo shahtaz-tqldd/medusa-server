@@ -282,15 +282,22 @@ class CreateAchievement(generics.CreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
+        try:
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
 
-        return APIResponse.success(
-            data = serializer.data,
-            message=res_msg.ACHIEVEMENT_CREATED[self.RES_LANG],
-            status=status.HTTP_201_CREATED
-        )
+            return APIResponse.success(
+                data = serializer.data,
+                message=res_msg.ACHIEVEMENT_CREATED[self.RES_LANG],
+                status=status.HTTP_201_CREATED
+            )
+        except Exception as e:
+            logger.error(f"Failed to create achievement: {e}")
+            return APIResponse.error(
+                message=f"Failed to create: {e}"
+            )
+
 
 class AchievementList(generics.ListAPIView):
     """API View to get achievement list"""
