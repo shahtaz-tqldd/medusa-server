@@ -1,5 +1,6 @@
 import logging
 from rest_framework import generics, permissions, status
+from rest_framework.exceptions import NotFound
 from base.managers.cloudinary import CloudinaryImageManager
 
 # helpers
@@ -234,6 +235,31 @@ class ExperienceList(generics.ListAPIView):
             message= res_msg.EXPERIENCE_LIST[self.RES_LANG]
         )
 
+class ExperienceDetails(generics.RetrieveAPIView):
+    """API View to get experience details"""
+    RES_LANG = "en"
+    serializer_class = ExperienceDetailsSerializer
+    queryset = Experience.objects.all()
+    lookup_field = "id"
+
+    def retrieve(self, request, *args, **kwargs):
+        lookup_value = kwargs.get(self.lookup_field)
+
+        try:
+            instance = self.get_queryset().get(id=lookup_value)
+        except Experience.DoesNotExist:
+            raise NotFound(
+                detail=res_msg.EXPERIENCE_NOT_FOUND[self.RES_LANG]
+            )
+
+        serializer = self.get_serializer(instance)
+
+        return APIResponse.success(
+            data=serializer.data,
+            message=res_msg.EXPERIENCE_DETAILS[self.RES_LANG],
+        )
+
+
 class UpdateExperienceDetails(generics.UpdateAPIView):
     """API View to update Experience details with id"""
     RES_LANG = 'en'
@@ -252,7 +278,7 @@ class UpdateExperienceDetails(generics.UpdateAPIView):
         return APIResponse.success(
             data=serializer.data,
             message= res_msg.EXPERIENCE_UPDATED[self.RES_LANG],
-            status=status.HTTP_205_RESET_CONTENT
+            status=status.HTTP_200_OK
         )
 
 class DeleteExperience(generics.DestroyAPIView):

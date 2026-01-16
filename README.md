@@ -3,7 +3,7 @@
 The server is developed with **Python, Django**, and **Django REST Framework**. This backend serves as an **authentication service** and manages **projects, blogs, skills**, and provides interaction with an ai **chatbot**.
 
 
-## 📚 Features
+## Features
 
 * **Authentication**
 
@@ -34,7 +34,7 @@ The server is developed with **Python, Django**, and **Django REST Framework**. 
   * APIs for chatbot integration
 
 
-## 🖥️ Local Development Setup
+## Local Development Setup
 
 ### 1. Create Virtual Environment
 
@@ -73,7 +73,7 @@ python manage.py runserver
 ```
 
 
-## 🐳 Run with Docker
+## Run with Docker
 
 ### 1. Configure Environment Variables
 
@@ -87,7 +87,7 @@ Make sure your `.env` file is properly configured.
 bash start_app.sh
 ```
 
-> 📌 Ensure Docker is installed and running on your system.
+> Ensure Docker is installed and running on your system.
 
 * **On Windows**
 
@@ -95,10 +95,10 @@ bash start_app.sh
 start_app.bat
 ```
 
-> 📌 Make sure Docker Desktop is running.
+> Make sure Docker Desktop is running.
 
 
-## 📬 API Documentation
+## API Documentation
 
 Explore the full API documentation via Postman:
 
@@ -115,8 +115,22 @@ Explore the full API documentation via Postman:
 * **Docker Compose**
 
 
-## 📌 Notes
+## Notes
 
 * Make sure to set your **necessary credentials** for the `.env` using reference from `.env.example` file.
 * Docker must be installed and running to use Docker deployment.
 * Postman collection link is available above for API testing.
+
+# Chat System
+
+- Greeting
+- Projects
+- Work Experience
+- Set Meeting
+- Skills Expertise
+- 
+
+
+
+-> Intention Classification -> Get Relevant Data -> Send to LLM for summarize -> Send User
+

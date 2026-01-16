@@ -9,6 +9,7 @@ from .views import (
     UpdateSkillDetails,
     CreateNewExperience,
     ExperienceList,
+    ExperienceDetails,
     UpdateExperienceDetails,
     DeleteExperience,
     AchievementList,
@@ -34,6 +35,7 @@ skill_urls = [
 
 experience_urls = [
     path("", ExperienceList.as_view(), name="experience-list"),
+    path("<uuid:id>/", ExperienceDetails.as_view(), name="experience-details"),
     path("create/", CreateNewExperience.as_view(), name="create-experience"),
     path("update/<uuid:id>/", UpdateExperienceDetails.as_view(), name="update-experience"),
     path("delete/<uuid:id>/", DeleteExperience.as_view(), name="delete-experience"),
