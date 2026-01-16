@@ -35,6 +35,9 @@ SKILL_UPDATED = {
 EXPERIENCE_CREATED = {
     "en": "New Experience Created!"
 }
+EXPERIENCE_DETAILS = {
+    "en": "Experience details retrieved successfully!"
+}
 
 EXPERIENCE_UPDATED = {
     "en": "Experience updated successfully!"
@@ -46,6 +49,9 @@ EXPERIENCE_LIST = {
 
 EXPERIENCE_DELETED = {
     "en": "Experience has been deleted!"
+}
+EXPERIENCE_NOT_FOUND = {
+    "en": "Experience not found with the id!"
 }
 
 # achievement message

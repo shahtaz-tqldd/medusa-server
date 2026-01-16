@@ -114,6 +114,14 @@ class BlogDetails(generics.RetrieveAPIView):
     
     serializer_class = BlogDetailSerializer
     RES_LANG = "en"
+
+    def _is_admin_view(self):
+        """
+        Check if admin_view=true is passed in query params
+        """
+        admin_view = self.request.query_params.get("admin_view", "").lower()
+        return admin_view in ("true", "1", "yes")
+
     
     def get_queryset(self):
         return Blog.objects.prefetch_related(
@@ -129,7 +137,10 @@ class BlogDetails(generics.RetrieveAPIView):
         lookup_value = self.kwargs.get('slug')
         try:
             blog = self.get_queryset().get(slug=lookup_value)
-            Blog.objects.filter(slug=lookup_value).update(view_count=F('view_count') + 1)
+            if not self._is_admin_view():
+                Blog.objects.filter(slug=lookup_value).update(
+                    view_count=F('view_count') + 1
+                )
             return blog
         
         except Blog.DoesNotExist:
@@ -153,7 +164,7 @@ class UpdateBlogDetails(generics.UpdateAPIView):
     
     serializer_class = BlogUpdateSerializer
     permission_classes = [IsAuthenticated]
-    lookup_field = 'id'
+    lookup_field = 'slug'
     RES_LANG = "en"
     
     def get_queryset(self):
@@ -162,7 +173,7 @@ class UpdateBlogDetails(generics.UpdateAPIView):
     def get_object(self):
         lookup_value = self.kwargs.get(self.lookup_field)
         try:
-            blog = Blog.objects.get(id=lookup_value)
+            blog = Blog.objects.get(slug=lookup_value)
             # Check permissions
             self.check_object_permissions(self.request, blog)
             return blog
@@ -181,7 +192,7 @@ class UpdateBlogDetails(generics.UpdateAPIView):
         return APIResponse.success(
             data=BlogDetailSerializer(updated_blog, context={'request': request}).data, 
             message=res_msg.BLOG_UPDATED[self.RES_LANG],
-            status=status.HTTP_205_RESET_CONTENT
+            status=status.HTTP_200_OK
         )
     
     def partial_update(self, request, *args, **kwargs):
@@ -192,16 +203,15 @@ class DeleteBlog(generics.DestroyAPIView):
     """API View to delete blog with id"""
     
     permission_classes = [IsAuthenticated]
-    lookup_field = 'id'
     RES_LANG = "en"
     
     def get_queryset(self):
         return Blog.objects.all()
     
     def get_object(self):
-        lookup_value = self.kwargs.get(self.lookup_field)
+        lookup_value = self.kwargs.get('slug')
         try:
-            blog = Blog.objects.get(id=lookup_value)
+            blog = Blog.objects.get(slug=lookup_value)
             # Check permissions
             self.check_object_permissions(self.request, blog)
             return blog
@@ -219,7 +229,7 @@ class DeleteBlog(generics.DestroyAPIView):
         
         return APIResponse.success(
             message=res_msg.BLOG_DELETED[self.RES_LANG], 
-            status=status.HTTP_204_NO_CONTENT
+            status=status.HTTP_200_OK
         )
     
 

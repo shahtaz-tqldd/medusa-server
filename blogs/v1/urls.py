@@ -34,9 +34,9 @@ tags_urls = [
 blog_urls = [
     path("list", BlogList.as_view(), name="blog-list"),
     path("create", CreateNewBlog.as_view(), name="create-blog"),
-    path("<slug>", BlogDetails.as_view(), name="blog-details"),
-    path("update/<id>", UpdateBlogDetails.as_view(), name="update-blog"),
-    path("delete/<id>", DeleteBlog.as_view(), name="delete-blog"),
+    path("<slug>/", BlogDetails.as_view(), name="blog-details"),
+    path("update/<slug>/", UpdateBlogDetails.as_view(), name="update-blog"),
+    path("delete/<slug>/", DeleteBlog.as_view(), name="delete-blog"),
 ]
 
 urlpatterns = blog_urls + [

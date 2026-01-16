@@ -1,5 +1,7 @@
 from rest_framework import generics, status, permissions
 from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.exceptions import NotFound
+
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import F
 
@@ -89,26 +91,43 @@ class ProjectDetails(generics.RetrieveAPIView):
     permission_classes = [permissions.AllowAny]
     serializer_class = ProjectDetailsSerializer
     queryset = Project.objects.all()
-    lookup_field = 'id'
+    lookup_field = "id"
+
+    def _is_admin_view(self):
+        """
+        Check if admin_view=true is passed in query params
+        """
+        admin_view = self.request.query_params.get("admin_view", "").lower()
+        return admin_view in ("true", "1", "yes")
 
     def get_object(self):
-        lookup_value = self.kwargs.get('id')
+        lookup_value = self.kwargs.get("id")
+
         try:
             project = self.get_queryset().get(id=lookup_value)
-            Project.objects.filter(id=lookup_value).update(view_count=F('view_count') + 1)
+
+            # Increment view count only for non-admin views
+            if not self._is_admin_view():
+                Project.objects.filter(id=lookup_value).update(
+                    view_count=F("view_count") + 1
+                )
+
             return project
-        
+
         except Project.DoesNotExist:
-            raise ValueError(detail=res_msg.PROJECT_NOT_FOUND[self.RES_LANG])
+            raise NotFound(
+                detail=res_msg.PROJECT_NOT_FOUND[self.RES_LANG]
+            )
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
         serializer = self.get_serializer(instance)
-        
+
         return APIResponse.success(
             data=serializer.data,
             message=res_msg.PROJECT_DETAILS[self.RES_LANG],
         )
+
     
 
 class UpdateProject(generics.UpdateAPIView):
@@ -133,7 +152,7 @@ class UpdateProject(generics.UpdateAPIView):
         return APIResponse.success(
             data=project_data,
             message=res_msg.PROJECT_UPDATED[self.RES_LANG],
-            status=status.HTTP_205_RESET_CONTENT,
+            status=status.HTTP_200_OK,
         )
 
 
@@ -151,6 +170,6 @@ class DeleteProject(generics.DestroyAPIView):
         self.perform_destroy(instance)
         return APIResponse.success(
             message=res_msg.PROJECT_DELETED[self.RES_LANG],
-            status=status.HTTP_204_NO_CONTENT
+            status=status.HTTP_200_OK
         )
     
