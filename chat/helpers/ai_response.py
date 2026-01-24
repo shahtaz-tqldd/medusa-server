@@ -1,89 +1,219 @@
 from google import genai
 from django.conf import settings
 from chat.v1.res_msg import CHAT_FAILED_MESSAGE
-
+from enum import Enum
 import logging
+
 logger = logging.getLogger(__name__)
+
+
+class Intent(Enum):
+    """Intent categories for the chat agent"""
+    SMALL_TALK = "small_talk"
+    SKILLS = "skills"
+    EXPERTISE = "expertise"
+    PROJECTS = "projects"
+    WORK_EXPERIENCE = "work_experience"
+    SCHEDULE_MEETING = "schedule_meeting"
+    OUT_OF_SCOPE = "out_of_scope"
+
+
+class IntentContentProvider:
+    """Provides static content for each intent"""
+    
+    @staticmethod
+    def get_content(intent: Intent) -> dict:
+        """Returns content dictionary for given intent"""
+        
+        content_map = {
+            Intent.SMALL_TALK: {
+                "context": """
+                You are Era, Shahtaz's AI assistant. Be friendly, conversational, and helpful.
+                You can engage in light conversation while staying professional.
+                Common topics: greetings, how you can help, general questions about the portfolio.
+                """,
+                "guidelines": "Keep it very brief (1-2 sentences). Be warm and naturally guide towards how you can help."
+            },
+            
+            Intent.SKILLS: {
+                "context": """
+                Shahtaz's Technical Skills:
+                
+                Frontend: React.js, Next.js, TypeScript, Tailwind CSS, Redux, RTK Query, Tanstack Query, ShadCN, Material UI
+                Backend: Node.js, Express.js, Python, Django, FastAPI
+                Databases: MongoDB, PostgreSQL
+                Tools: Docker, Git, AWS, WebSocket, Playwright
+                AI: Agent Development, Google ADK, RAG, Vector Database, Pinecone, Vertex AI
+                """,
+                "guidelines": "List 3-5 most relevant skills based on query. Keep it to 2-3 sentences max. Offer to elaborate on specific areas."
+            },
+            
+            Intent.EXPERTISE: {
+                "context": """
+                Shahtaz's Core Expertise (2+ years experience):
+                
+                1. Full-Stack Development (React/Next.js + Node.js/Django)
+                2. Real-Time Systems (Socket.IO, WebSockets)
+                3. SaaS & ERP Solutions (HRM, Restaurant Management)
+                4. CRM & Business Platforms (Dashboards, Analytics)
+                5. AI Agent Development(AI Chatbot Agent)
+                6. E-commerce Solutions (Full shopping platforms)
+                """,
+                "guidelines": "Mention 2-3 key areas. 2-3 sentences total. Ask what area they want to know more about."
+            },
+            
+            Intent.PROJECTS: {
+                "context": """
+                Shahtaz's Project Categories:
+                
+                1. SaaS & ERP: Real-time HRM systems, Restaurant management platforms
+                2. CRM & Business: Courier dashboards, Employee tracking systems
+                3. AI Agent: Chatbot Assistant for Personal Portfolio, AI Chatbot Assistant for Shopping
+                4. Business Sites: Landing pages with animations, Third-party integrations
+                5. ECommerce & Blogs: Shopping platforms, Content management systems
+                """,
+                "guidelines": "List 3-4 project types briefly. 2-3 sentences max. Ask which type they'd like details on."
+            },
+            
+            Intent.WORK_EXPERIENCE: {
+                "context": """
+                Shahtaz's Experience:
+                - 2+ years as Full-Stack Developer
+                - Built 15+ production applications
+                - Specializes in SaaS, ERP, CRM, Ecommerce and AI Agent Development
+                - Real-time features and AI integration expert
+                - Works with modern tech stacks (React, Next JS, Node JS, Django, FastAPI)
+                Professional Experience:
+                - Worked at Echologyx Ltd. an UK based Software Company since March, 2024
+                - At Echologyx Working in ELX Chatbot's AI Agent Development in FastAPI with Google ADK
+                - Worked in ELX Chatbot's Backend with Django and PostgreSQL
+                - Worked at AyyKori a fin-tech startup as a MERN Stack Developer
+                - Worked in their MVP's backend and frontend along with their HRM Project
+                """,
+                "guidelines": "Highlight 2-3 key points. Keep to 2-3 sentences. Offer to discuss specific experience areas."
+            },
+            
+            Intent.SCHEDULE_MEETING: {
+                "context": f"""
+                Meeting Link: {settings.MEETING_LINK}
+                
+                Available for:
+                - Project consultations
+                - Technical discussions
+                - Collaboration opportunities
+                - Freelance inquiries
+                """,
+                "guidelines": "Confirm they want to schedule first. Share link with 1 sentence context. Ask what they'd like to discuss."
+            },
+            
+            Intent.OUT_OF_SCOPE: {
+                "context": """
+                This query is outside portfolio scope.
+                I can help with: Skills, Projects, Experience, or Scheduling a meeting.
+                """,
+                "guidelines": "Keep it to 1-2 sentences. Politely redirect. Offer meeting if business-related."
+            }
+        }
+        
+        return content_map.get(intent, content_map[Intent.OUT_OF_SCOPE])
+
 
 class PortfolioChatAgent:
     def __init__(self):
         self.gemini_client = genai.Client(api_key=settings.GEMINI_TOKEN)
         self.model = settings.GEMINI_MODEL
+        self.content_provider = IntentContentProvider()
         
-        # System context about Shahtaz (always remains the same)
-        self.system_context = """
-        You are Era, an AI assistant for Shahtaz's professional portfolio.
-        Your primary goal is to provide helpful, conversational, and accurate information about Shahtaz, his skills, and his projects.
-
-        --- Shahtaz's Profile ---
-        Name: Shahtaz
-        Role: Software Developer
-        Experience: 2 years of full-stack development.
-        Key Expertise: React.js, Next.js, Tailwind CSS, Redux, RTK Query, Tanstack Query, Node.js, MongoDB, Python, Django, PostgreSQL, FastAPI, Docker, Socket.IO, and AI integrations.
-
-       --- Key Projects ---
-        1. SaaS & ERP Solutions:
-          - Developed real-time HRM systems and restaurant management tools with features like payroll automation, attendance tracking, delivery logging, and socket-based live updates.
-          - Technologies: React.js, Next.js, Node.js, Django, PostgreSQL, MongoDB, Socket.IO.
-
-        2. CRM & Business Platforms:
-          - Built internal and client-facing dashboards for courier and service-based businesses. Integrated role-based access control, employee performance tracking, dynamic PDF-to-JSON parsing, and visual analytics.
-          - Technologies: React.js, TypeScript, Express.js, MongoDB, Chart.js, and PDF.js.
-
-        3. AI-Powered Chatbot:
-          - Engineered a portfolio-integrated AI assistant capable of answering questions, showcasing projects, and generating resumes or cover letters on demand.
-          - Technologies: Python, Django, Google Gemini API, and custom prompt pipelines.
-
-        4. Web Presence & Integrations:
-          - Designed responsive business landing pages with animated UI, theme toggles, and section-based layouts. Integrated third-party services like Google Maps, Google Analytics, Crisp Chat, and payment gateways.
-          - Technologies: Next.js, Tailwind CSS, Framer Motion, ShadCN, and Vercel.
-
-        5. eCommerce & Blog Platforms
-          - Delivered personalized eCommerce sites and blog systems with features like product filtering, cart and checkout systems, blog categorization, and secure user authentication.
-          - Technologies: React.js, Next.js, Node.js, MongoDB, JWT, and Markdown/MDX for content.
+    def _classify_intent(self, user_query: str) -> Intent:
+        """Classify user intent using AI"""
         
-        --- Business Inquiries & Next Steps ---
-        For business inquiries, potential collaborations, or in-depth discussions, provide specific details about Shahtaz's relevant experience and encourage scheduling a meeting.
-        Meeting Link: https://calendly.com/shahtaz67
+        classification_prompt = f"""
+        You are an intent classifier for a portfolio chat assistant. Analyze the user's query and classify it into ONE of these categories:
+        
+        1. small_talk - Greetings, casual conversation, general inquiries about the assistant
+        2. skills - Questions about technical skills, programming languages, frameworks, tools
+        3. expertise - Questions about areas of expertise, specializations, what they're good at
+        4. projects - Questions about specific projects, portfolio work, examples of work
+        5. work_experience - Questions about professional experience, career history, job roles
+        6. schedule_meeting - User wants to schedule a meeting, consultation, or discuss opportunities
+        7. out_of_scope - Anything not related to the portfolio, personal questions unrelated to work, or off-topic queries
+        
+        User Query: "{user_query}"
+        
+        Respond with ONLY the category name (e.g., "skills" or "projects"). No explanation needed.
         """
-
-    def _create_conversation_prompt(self, user_query: str, conversation_summary: str = ""):
-        """Create the full prompt for the AI including system context and conversation history"""
+        
+        try:
+            response = self.gemini_client.models.generate_content(
+                model=self.model,
+                contents=classification_prompt
+            )
+            
+            intent_str = response.text.strip().lower()
+            
+            # Map response to Intent enum
+            intent_mapping = {
+                "small_talk": Intent.SMALL_TALK,
+                "skills": Intent.SKILLS,
+                "expertise": Intent.EXPERTISE,
+                "projects": Intent.PROJECTS,
+                "work_experience": Intent.WORK_EXPERIENCE,
+                "schedule_meeting": Intent.SCHEDULE_MEETING,
+                "out_of_scope": Intent.OUT_OF_SCOPE
+            }
+            
+            return intent_mapping.get(intent_str, Intent.OUT_OF_SCOPE)
+            
+        except Exception as e:
+            logger.error(f"Error classifying intent: {e}")
+            return Intent.OUT_OF_SCOPE
+    
+    def _create_response_prompt(self, user_query: str, intent: Intent, conversation_summary: str = ""):
+        """Create prompt based on classified intent"""
+        
+        content = self.content_provider.get_content(intent)
         
         conversation_context = ""
         if conversation_summary.strip():
-            conversation_context = f"\n\nConversation Context: {conversation_summary}"
+            conversation_context = f"\n\nPrevious Conversation: {conversation_summary}"
         
-        # Define the response format requirement with better instructions
-        response_format = (
-            "\n\nIMPORTANT INSTRUCTIONS:\n"
-            "- If this is a continuing conversation (context provided above), build upon what was already discussed\n"
-            "- DO NOT repeat introductions if you've already introduced yourself\n"
-            "- Reference previous topics naturally to maintain conversation flow\n"
-            "- Be conversational and helpful, focusing on the user's current question\n"
-            "- Only share the Meeting Link if the user explicitly asks to schedule a meeting. First, confirm whether the user wants to schedule one before providing the link.\n"
-            "RESPONSE FORMAT: Structure your response in exactly two sections separated by '---SUMMARY---':\n"
-            "1. First section: Your natural response to the user's query (no repetitive introductions)\n"
-            "2. Second section: Updated conversation summary (50-100 words) including this exchange\n\n"
-            "Example:\n"
-            "[Your direct response to the current query]\n\n"
-            "---SUMMARY---\n"
-            "[Updated summary of the entire conversation including this exchange]"
-        )
+        base_info = """
+        You are Era, Shahtaz's AI portfolio assistant.
         
-        full_prompt = (
-            f"{self.system_context}"
-            f"{conversation_context}"
-            f"{response_format}"
-            f"\n\nCurrent User Query: {user_query}"
-        )
+        Shahtaz: Full-Stack Developer with 2+ years experience
+        """
+        
+        response_instructions = f"""
+        
+        {content['context']}
+        
+        Guidelines: {content['guidelines']}
+        
+        CRITICAL CHAT RESPONSE RULES:
+        - Maximum 2-3 sentences ONLY
+        - Be conversational and natural like texting
+        - After brief answer, ask ONE follow-up question to engage if applicable
+        - NO bullet points, NO long lists, NO markdown formatting
+        - Use natural language: "like X, Y, and Z" instead of lists
+        - For projects/skills: mention 2-4 items then ask what they want details on
+        - If continuing conversation, reference context briefly
+        - NO repetitive introductions
+        - Keep it SHORT and ENGAGING
+        
+        RESPONSE FORMAT:
+        [Your short 2-3 sentence answer]
+        
+        ---SUMMARY---
+        [A Brief summary of this exchange]
+        """
+        
+        full_prompt = f"{base_info}{conversation_context}{response_instructions}\n\nUser: {user_query}\nIntent: {intent.value}"
         
         return full_prompt
-
+    
     def _extract_response_sections(self, ai_response: str):
-        """Extract user response and conversation summary from AI response"""
+        """Extract user response and conversation summary"""
         try:
-            # Split by the separator
             parts = ai_response.split("---SUMMARY---")
             
             if len(parts) >= 2:
@@ -91,63 +221,60 @@ class PortfolioChatAgent:
                 new_summary = parts[1].strip()
                 return user_response, new_summary
             else:
-                # Fallback if separator not found
-                logger.warning("AI response doesn't contain expected separator")
+                logger.warning("AI response missing separator")
                 return ai_response.strip(), ""
                 
         except Exception as e:
             logger.error(f"Error extracting response sections: {e}")
             return ai_response.strip(), ""
-
-    def _merge_conversation_summaries(self, previous_summary: str, new_summary: str):
-        """Merge previous summary with new summary to maintain conversation context"""
-        if not previous_summary.strip():
-            return new_summary
-        
-        if not new_summary.strip():
-            return previous_summary
-            
-        # Simple merge - let the AI handle the context in the next interaction
-        # Focus on keeping the most recent and relevant information
-        if len(previous_summary) > 200:  # If getting too long, prioritize recent info
-            return new_summary
-        else:
-            return f"{previous_summary.strip()} {new_summary.strip()}"
-
+    
+    def _merge_summaries(self, previous: str, new: str):
+        """Merge conversation summaries"""
+        if not previous.strip():
+            return new
+        if not new.strip():
+            return previous
+        if len(previous) > 200:
+            return new
+        return f"{previous.strip()} {new.strip()}"
+    
     def process_chat_message(self, user_query: str, conversation_summary: str = ""):
         """
-        Main method to process a chat message and return structured response
+        Process chat message with intent classification
         
         Returns:
             dict: {
-                'user_response': str,  # Response to send to user
-                'conversation_summary': str,  # Updated summary for storage
-                'success': bool,  # Whether the operation was successful
-                'error': str  # Error message if any
+                'user_response': str,
+                'conversation_summary': str,
+                'intent': str,
+                'success': bool,
+                'error': str
             }
         """
         try:
-            # Create the full prompt
-            full_prompt = self._create_conversation_prompt(user_query, conversation_summary)
+            # Step 1: Classify intent
+            intent = self._classify_intent(user_query)
+            logger.info(f"Classified intent: {intent.value}")
             
-            # Generate AI response
+            # Step 2: Generate response based on intent
+            prompt = self._create_response_prompt(user_query, intent, conversation_summary)
+            
             ai_response = self.gemini_client.models.generate_content(
                 model=self.model,
-                contents=full_prompt,
+                contents=prompt
             )
             
             if not ai_response or not ai_response.text:
                 raise Exception("Empty response from AI")
             
-            # Extract the two sections
+            # Step 3: Extract and structure response
             user_response, new_summary = self._extract_response_sections(ai_response.text)
-            
-            # Merge with previous summary if needed
-            updated_summary = self._merge_conversation_summaries(conversation_summary, new_summary)
+            updated_summary = self._merge_summaries(conversation_summary, new_summary)
             
             return {
                 'user_response': user_response,
                 'conversation_summary': updated_summary,
+                'intent': intent.value,
                 'success': True,
                 'error': None
             }
@@ -156,19 +283,19 @@ class PortfolioChatAgent:
             logger.error(f"Error processing chat message: {e}")
             return {
                 'user_response': CHAT_FAILED_MESSAGE["en"],
-                'conversation_summary': conversation_summary,  # Keep previous summary
+                'conversation_summary': conversation_summary,
+                'intent': 'error',
                 'success': False,
                 'error': str(e)
             }
 
 
-# Enhanced function with full result details
 def process_portfolio_chat(user_query: str, conversation_summary: str = ""):
     """
-    Process portfolio chat with full result details
+    Process portfolio chat with intent classification
     
     Returns:
-        dict: Complete result with user_response, conversation_summary, success, and error
+        dict: Complete result with user_response, conversation_summary, intent, success, and error
     """
     agent = PortfolioChatAgent()
     return agent.process_chat_message(user_query, conversation_summary)
