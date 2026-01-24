@@ -1,0 +1,36 @@
+services:
+  medusa_app:
+    container_name: medusa_app
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - static_volume:/app/staticfiles
+    env_file:
+      - .env
+    ports:
+      - "5000:5000"
+    depends_on:
+      - medusa_db
+    networks:
+      - medusa-network
+
+  medusa_db:
+    image: postgres:16
+    container_name: medusa_postgres
+    environment:
+      - POSTGRES_DB=${PGDB_NAME}
+      - POSTGRES_USER=${PGDB_USER}
+      - POSTGRES_PASSWORD=${PGDB_PASSWORD}
+    volumes:
+      - medusa_data:/var/lib/postgresql/data/
+    networks:
+      - medusa-network
+
+networks:
+  medusa-network:
+
+volumes:
+  medusa_data:
+  static_volume:
+  

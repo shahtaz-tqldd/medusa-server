@@ -13,3 +13,7 @@ CLIENT_CREATED = {
 CLIENT_LIST = {
     "en": "Client list received!"
 }
+
+OVERVIEW_STATS = {
+    "en": "Received Overview status!"
+}

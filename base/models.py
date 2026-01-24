@@ -1,9 +1,9 @@
 import uuid
+
 from django.db import models
 from django.utils import timezone
 
 from base.choices import ProjectTypeChoices
-
 
 class Visitor(models.Model):
     """Model to store unique visitor information"""
@@ -25,9 +25,6 @@ class Visitor(models.Model):
     # Analytics
     visit_count = models.PositiveIntegerField(default=1)
     total_time_spent = models.DurationField(default=timezone.timedelta)
-    
-    # Tracking cookie for anonymous visitors
-    cookie_id = models.CharField(max_length=64, blank=True, null=True)
     
     class Meta:
         verbose_name = 'Visitor'
@@ -64,6 +61,7 @@ class Client(models.Model):
     budget = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     timeline = models.CharField(max_length=64, blank=True, null=True)
     design_required = models.BooleanField(default=False)
+    is_onboarded = models.BooleanField(default=False)
 
     created_at = models.DateTimeField(auto_now_add=True)
     

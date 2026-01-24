@@ -1,3 +1,4 @@
+import json
 from django.db import transaction
 from django.utils import timezone
 from rest_framework import serializers
@@ -5,6 +6,8 @@ from blogs.models import (
     Blog, Category, Tag, ContentBlock, TextBlock, HeadingBlock, 
     CodeBlock, ImageBlock, QuoteBlock, ListBlock, ListItem
 )
+from base.managers.cloudinary import CloudinaryImageManager
+
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
@@ -34,9 +37,40 @@ class CodeBlockSerializer(serializers.ModelSerializer):
         fields = ['code', 'language', 'caption', 'line_numbers']
 
 class ImageBlockSerializer(serializers.ModelSerializer):
+    image = serializers.ImageField(required=True, write_only=True)
+    image_url = serializers.URLField(source='image', read_only=True)
+    
     class Meta:
         model = ImageBlock
-        fields = ['image', 'caption', 'alt_text']
+        fields = ['image', 'image_url', 'caption', 'alt_text', 'cloudinary_public_id']
+        read_only_fields = ['cloudinary_public_id', 'image_url']
+    
+    def create(self, validated_data):
+        image_file = validated_data.pop('image')
+        block = validated_data.pop('block', None)
+        
+        # Upload to Cloudinary
+        cloudinary_manager = CloudinaryImageManager()
+        try:
+            upload_result = cloudinary_manager.upload(
+                image_file, 
+                folder="tourtoise/blog/content"
+            )
+            
+            # Create ImageBlock with Cloudinary data
+            image_block = ImageBlock.objects.create(
+                block=block,
+                image=upload_result['url'],
+                cloudinary_public_id=upload_result['public_id'],
+                **validated_data
+            )
+            
+            return image_block
+            
+        except Exception as e:
+            raise serializers.ValidationError({
+                'image': f'Failed to upload image: {str(e)}'
+            })
 
 class QuoteBlockSerializer(serializers.ModelSerializer):
     class Meta:
@@ -100,7 +134,10 @@ class ContentBlockSerializer(serializers.ModelSerializer):
         elif block_type == 'code' and code_data:
             CodeBlock.objects.create(block=content_block, **code_data)
         elif block_type == 'image' and image_data:
-            ImageBlock.objects.create(block=content_block, **image_data)
+            # Use the ImageBlockSerializer to handle Cloudinary upload
+            image_serializer = ImageBlockSerializer()
+            image_data['block'] = content_block
+            image_serializer.create(image_data)
         elif block_type == 'quote' and quote_data:
             QuoteBlock.objects.create(block=content_block, **quote_data)
         elif block_type == 'list' and list_data:
@@ -111,34 +148,61 @@ class ContentBlockSerializer(serializers.ModelSerializer):
                 
         return content_block
 
-# Blog create serializer
+
 class BlogCreateSerializer(serializers.ModelSerializer):
     category = serializers.PrimaryKeyRelatedField(
         queryset=Category.objects.all(), 
         required=True,
         allow_null=False
     )
-    tags = serializers.PrimaryKeyRelatedField(
-        queryset=Tag.objects.all(), 
-        many=True, 
-        required=False
+    tags = serializers.ListField(
+        child=serializers.CharField(),
+        required=False,
+        allow_empty=True
     )
-    content_blocks = ContentBlockSerializer(many=True, required=False)
+    content_blocks = serializers.JSONField(required=False)
+    featured_image = serializers.ImageField(required=False, allow_null=True, write_only=True)
+    featured_image_url = serializers.URLField(source='featured_image', read_only=True)
 
     class Meta:
         model = Blog
         fields = [
             'id', 'title', 'subtitle', 'excerpt', 
-            'featured_image', 'status', 'category',
+            'featured_image', 'featured_image_url', 'status', 'category',
             'tags', 'content_blocks'
         ]
-        read_only_fields = ['id', 'slug']
+        read_only_fields = ['id', 'slug', 'featured_image_url']
+
+    def validate_content_blocks(self, value):
+        """Parse content_blocks if it comes as string"""
+        if isinstance(value, str):
+            try:
+                value = json.loads(value)
+            except json.JSONDecodeError:
+                raise serializers.ValidationError("Invalid JSON format for content_blocks")
+        return value
 
     @transaction.atomic
     def create(self, validated_data):
         # Extract nested data
         tags_data = validated_data.pop('tags', [])
         content_blocks_data = validated_data.pop('content_blocks', [])
+        featured_image_file = validated_data.pop('featured_image', None)
+        
+        # Handle featured image upload to Cloudinary
+        if featured_image_file:
+            cloudinary_manager = CloudinaryImageManager()
+            try:
+                upload_result = cloudinary_manager.upload(
+                    featured_image_file,
+                    folder="tourtoise/blog/featured"
+                )
+                validated_data['featured_image'] = upload_result['url']
+                validated_data['featured_image_public_id'] = upload_result['public_id']
+            except Exception as e:
+                raise serializers.ValidationError({
+                    'featured_image': f'Failed to upload featured image: {str(e)}'
+                })
         
         # Create the blog
         blog = Blog.objects.create(
@@ -146,22 +210,121 @@ class BlogCreateSerializer(serializers.ModelSerializer):
             **validated_data
         )
 
-        # Add tags
+        # Create or get tags and add them
         if tags_data:
-            blog.tags.set(tags_data)
+            tag_objects = []
+            for tag_name in tags_data:
+                tag, created = Tag.objects.get_or_create(name=tag_name)
+                tag_objects.append(tag)
+            blog.tags.set(tag_objects)
 
-        # Create content blocks
-        for block_data in content_blocks_data:
-            block_data['blog'] = blog
-            self.fields['content_blocks'].child.create(block_data)
+        # Create content blocks from parsed data
+        for idx, block_data in enumerate(content_blocks_data):
+            self._create_content_block(blog, block_data, idx)
 
         return blog
+    
+    def _create_content_block(self, blog, block_data, order):
+        """Helper method to create content blocks"""
+        block_type = block_data.get('block_type')
+        
+        # Create ContentBlock
+        content_block = ContentBlock.objects.create(
+            blog=blog,
+            block_type=block_type,
+            order=block_data.get('order', order)
+        )
+        
+        # Create specific content based on type
+        if block_type == 'text':
+            text_content = block_data.get('text_content', {})
+            TextBlock.objects.create(
+                block=content_block,
+                content=text_content.get('content', '')
+            )
+            
+        elif block_type == 'heading':
+            heading_content = block_data.get('heading_content', {})
+            HeadingBlock.objects.create(
+                block=content_block,
+                content=heading_content.get('content', ''),
+                level=heading_content.get('level', 2)
+            )
+            
+        elif block_type == 'code':
+            code_content = block_data.get('code_content', {})
+            CodeBlock.objects.create(
+                block=content_block,
+                code=code_content.get('code', ''),
+                language=code_content.get('language', 'python'),
+                caption=code_content.get('caption', ''),
+                line_numbers=code_content.get('line_numbers', True)
+            )
+            
+        elif block_type == 'image':
+            # Get image file from request.FILES
+            image_key = f'content_blocks[{order}]image_content.image'
+            image_file = self.context['request'].FILES.get(image_key)
+            
+            if image_file:
+                cloudinary_manager = CloudinaryImageManager()
+                try:
+                    upload_result = cloudinary_manager.upload(
+                        image_file,
+                        folder="tourtoise/blog/content"
+                    )
+                    
+                    image_content = block_data.get('image_content', {})
+                    ImageBlock.objects.create(
+                        block=content_block,
+                        image=upload_result['url'],
+                        cloudinary_public_id=upload_result['public_id'],
+                        caption=image_content.get('caption', ''),
+                        alt_text=image_content.get('alt_text', '')
+                    )
+                except Exception as e:
+                    # Log error but don't fail the entire blog creation
+                    print(f"Failed to upload image for block {order}: {str(e)}")
+                    
+        elif block_type == 'quote':
+            quote_content = block_data.get('quote_content', {})
+            QuoteBlock.objects.create(
+                block=content_block,
+                content=quote_content.get('content', ''),
+                source=quote_content.get('source', '')
+            )
+            
+        elif block_type == 'list':
+            list_content = block_data.get('list_content', {})
+            list_block = ListBlock.objects.create(
+                block=content_block,
+                list_type=list_content.get('list_type', 'unordered')
+            )
+            items = list_content.get('items', [])
+            for item_idx, item in enumerate(items):
+                ListItem.objects.create(
+                    list_block=list_block,
+                    content=item.get('content', ''),
+                    order=item.get('order', item_idx)
+                )
 
 
-# Serializers for blog details view
-class ContentBlockDetailSerializer(ContentBlockSerializer):
-    class Meta(ContentBlockSerializer.Meta):
-        fields = ContentBlockSerializer.Meta.fields
+# Blog detail serializers remain the same...
+class ContentBlockDetailSerializer(serializers.ModelSerializer):
+    text_content = TextBlockSerializer(required=False)
+    heading_content = HeadingBlockSerializer(required=False)
+    code_content = CodeBlockSerializer(required=False)
+    image_content = ImageBlockSerializer(required=False)
+    quote_content = QuoteBlockSerializer(required=False)
+    list_content = ListBlockSerializer(required=False)
+    
+    class Meta:
+        model = ContentBlock
+        fields = [
+            'id', 'block_type', 'order', 
+            'text_content', 'heading_content', 'code_content', 
+            'image_content', 'quote_content', 'list_content'
+        ]
     
     def to_representation(self, instance):
         data = super().to_representation(instance)
@@ -197,7 +360,6 @@ class BlogDetailSerializer(serializers.ModelSerializer):
             'name': f"{obj.author.first_name} {obj.author.last_name}".strip() or obj.author.username
         }
     
-
 class BlogListSerializer(serializers.ModelSerializer):
     author = serializers.SerializerMethodField()
     category = CategorySerializer(read_only=True)
@@ -225,25 +387,62 @@ class BlogUpdateSerializer(serializers.ModelSerializer):
         required=True,
         allow_null=False
     )
-
-    tags = serializers.PrimaryKeyRelatedField(
-        queryset=Tag.objects.all(), 
-        many=True, 
-        required=False
+    tags = serializers.ListField(
+        child=serializers.CharField(),
+        required=False,
+        allow_empty=True
     )
+    content_blocks = serializers.JSONField(required=False)
+    featured_image = serializers.ImageField(required=False, allow_null=True, write_only=True)
+    featured_image_url = serializers.URLField(source='featured_image', read_only=True)
     
     class Meta:
         model = Blog
         fields = [
             'title', 'subtitle', 'excerpt', 
-            'featured_image', 'status', 'category', 
-            'tags'
+            'featured_image', 'featured_image_url', 'status', 'category', 
+            'tags', 'content_blocks'
         ]
+
+    def validate_content_blocks(self, value):
+        """Parse content_blocks if it comes as string"""
+        if isinstance(value, str):
+            try:
+                value = json.loads(value)
+            except json.JSONDecodeError:
+                raise serializers.ValidationError("Invalid JSON format for content_blocks")
+        return value
     
     @transaction.atomic
     def update(self, instance, validated_data):
-        # Handle categories and tags
+        # Extract nested data
         tags_data = validated_data.pop('tags', None)
+        content_blocks_data = validated_data.pop('content_blocks', None)
+        featured_image_file = validated_data.pop('featured_image', None)
+        
+        # Handle featured image upload to Cloudinary
+        if featured_image_file:
+            # Delete old image from Cloudinary if exists
+            if instance.featured_image_public_id:
+                cloudinary_manager = CloudinaryImageManager()
+                try:
+                    cloudinary_manager.delete(instance.featured_image_public_id)
+                except Exception as e:
+                    print(f"Failed to delete old featured image: {str(e)}")
+            
+            # Upload new image
+            cloudinary_manager = CloudinaryImageManager()
+            try:
+                upload_result = cloudinary_manager.upload(
+                    featured_image_file,
+                    folder="tourtoise/blog/featured"
+                )
+                validated_data['featured_image'] = upload_result['url']
+                validated_data['featured_image_public_id'] = upload_result['public_id']
+            except Exception as e:
+                raise serializers.ValidationError({
+                    'featured_image': f'Failed to upload featured image: {str(e)}'
+                })
         
         # Update status and published_at
         old_status = instance.status
@@ -254,10 +453,232 @@ class BlogUpdateSerializer(serializers.ModelSerializer):
             validated_data['published_at'] = timezone.now()
         
         # Update the blog instance
-        instance = super().update(instance, validated_data)
-            
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        
         # Update tags if provided
         if tags_data is not None:
-            instance.tags.set(tags_data)
-            
+            tag_objects = []
+            for tag_name in tags_data:
+                tag, created = Tag.objects.get_or_create(name=tag_name)
+                tag_objects.append(tag)
+            instance.tags.set(tag_objects)
+        
+        # Update content blocks if provided
+        if content_blocks_data is not None:
+            self._update_content_blocks(instance, content_blocks_data)
+        
         return instance
+    
+    def _update_content_blocks(self, blog, blocks_data):
+        """Update content blocks for a blog"""
+        # Track which block IDs are in the update
+        updated_block_ids = set()
+        
+        for idx, block_data in enumerate(blocks_data):
+            block_id = block_data.get('id')
+            
+            if block_id:
+                # Update existing block
+                try:
+                    content_block = ContentBlock.objects.get(id=block_id, blog=blog)
+                    content_block.order = block_data.get('order', idx)
+                    content_block.save()
+                    
+                    # Update the specific content
+                    self._update_block_content(content_block, block_data, idx)
+                    updated_block_ids.add(str(block_id))
+                except ContentBlock.DoesNotExist:
+                    # If block doesn't exist, create it
+                    self._create_content_block(blog, block_data, idx)
+            else:
+                # Create new block
+                self._create_content_block(blog, block_data, idx)
+        
+        # Delete blocks that weren't in the update
+        ContentBlock.objects.filter(blog=blog).exclude(
+            id__in=updated_block_ids
+        ).delete()
+    
+    def _update_block_content(self, content_block, block_data, order):
+        """Update the content of a specific block"""
+        block_type = content_block.block_type
+        
+        if block_type == 'text':
+            text_content = block_data.get('text_content', {})
+            TextBlock.objects.update_or_create(
+                block=content_block,
+                defaults={'content': text_content.get('content', '')}
+            )
+            
+        elif block_type == 'heading':
+            heading_content = block_data.get('heading_content', {})
+            HeadingBlock.objects.update_or_create(
+                block=content_block,
+                defaults={
+                    'content': heading_content.get('content', ''),
+                    'level': heading_content.get('level', 2)
+                }
+            )
+            
+        elif block_type == 'code':
+            code_content = block_data.get('code_content', {})
+            CodeBlock.objects.update_or_create(
+                block=content_block,
+                defaults={
+                    'code': code_content.get('code', ''),
+                    'language': code_content.get('language', 'python'),
+                    'caption': code_content.get('caption', ''),
+                    'line_numbers': code_content.get('line_numbers', True)
+                }
+            )
+            
+        elif block_type == 'image':
+            image_content = block_data.get('image_content', {})
+            
+            # Check if new image uploaded
+            image_key = f'content_blocks[{order}]image_content.image'
+            image_file = self.context['request'].FILES.get(image_key)
+            
+            defaults = {
+                'caption': image_content.get('caption', ''),
+                'alt_text': image_content.get('alt_text', '')
+            }
+            
+            if image_file:
+                # Delete old image from Cloudinary
+                try:
+                    existing_image = ImageBlock.objects.get(block=content_block)
+                    if existing_image.cloudinary_public_id:
+                        cloudinary_manager = CloudinaryImageManager()
+                        cloudinary_manager.delete(existing_image.cloudinary_public_id)
+                except ImageBlock.DoesNotExist:
+                    pass
+                
+                # Upload new image
+                cloudinary_manager = CloudinaryImageManager()
+                try:
+                    upload_result = cloudinary_manager.upload(
+                        image_file,
+                        folder="tourtoise/blog/content"
+                    )
+                    defaults['image'] = upload_result['url']
+                    defaults['cloudinary_public_id'] = upload_result['public_id']
+                except Exception as e:
+                    print(f"Failed to upload image for block {order}: {str(e)}")
+            
+            ImageBlock.objects.update_or_create(
+                block=content_block,
+                defaults=defaults
+            )
+            
+        elif block_type == 'quote':
+            quote_content = block_data.get('quote_content', {})
+            QuoteBlock.objects.update_or_create(
+                block=content_block,
+                defaults={
+                    'content': quote_content.get('content', ''),
+                    'source': quote_content.get('source', '')
+                }
+            )
+            
+        elif block_type == 'list':
+            list_content = block_data.get('list_content', {})
+            list_block, created = ListBlock.objects.update_or_create(
+                block=content_block,
+                defaults={'list_type': list_content.get('list_type', 'unordered')}
+            )
+            
+            # Delete existing items and create new ones
+            ListItem.objects.filter(list_block=list_block).delete()
+            
+            items = list_content.get('items', [])
+            for item_idx, item in enumerate(items):
+                ListItem.objects.create(
+                    list_block=list_block,
+                    content=item.get('content', ''),
+                    order=item.get('order', item_idx)
+                )
+    
+    def _create_content_block(self, blog, block_data, order):
+        """Helper method to create new content blocks (reused from BlogCreateSerializer)"""
+        block_type = block_data.get('block_type')
+        
+        # Create ContentBlock
+        content_block = ContentBlock.objects.create(
+            blog=blog,
+            block_type=block_type,
+            order=block_data.get('order', order)
+        )
+        
+        # Create specific content based on type
+        if block_type == 'text':
+            text_content = block_data.get('text_content', {})
+            TextBlock.objects.create(
+                block=content_block,
+                content=text_content.get('content', '')
+            )
+            
+        elif block_type == 'heading':
+            heading_content = block_data.get('heading_content', {})
+            HeadingBlock.objects.create(
+                block=content_block,
+                content=heading_content.get('content', ''),
+                level=heading_content.get('level', 2)
+            )
+            
+        elif block_type == 'code':
+            code_content = block_data.get('code_content', {})
+            CodeBlock.objects.create(
+                block=content_block,
+                code=code_content.get('code', ''),
+                language=code_content.get('language', 'python'),
+                caption=code_content.get('caption', ''),
+                line_numbers=code_content.get('line_numbers', True)
+            )
+            
+        elif block_type == 'image':
+            image_key = f'content_blocks[{order}]image_content.image'
+            image_file = self.context['request'].FILES.get(image_key)
+            
+            if image_file:
+                cloudinary_manager = CloudinaryImageManager()
+                try:
+                    upload_result = cloudinary_manager.upload(
+                        image_file,
+                        folder="tourtoise/blog/content"
+                    )
+                    
+                    image_content = block_data.get('image_content', {})
+                    ImageBlock.objects.create(
+                        block=content_block,
+                        image=upload_result['url'],
+                        cloudinary_public_id=upload_result['public_id'],
+                        caption=image_content.get('caption', ''),
+                        alt_text=image_content.get('alt_text', '')
+                    )
+                except Exception as e:
+                    print(f"Failed to upload image for block {order}: {str(e)}")
+                    
+        elif block_type == 'quote':
+            quote_content = block_data.get('quote_content', {})
+            QuoteBlock.objects.create(
+                block=content_block,
+                content=quote_content.get('content', ''),
+                source=quote_content.get('source', '')
+            )
+            
+        elif block_type == 'list':
+            list_content = block_data.get('list_content', {})
+            list_block = ListBlock.objects.create(
+                block=content_block,
+                list_type=list_content.get('list_type', 'unordered')
+            )
+            items = list_content.get('items', [])
+            for item_idx, item in enumerate(items):
+                ListItem.objects.create(
+                    list_block=list_block,
+                    content=item.get('content', ''),
+                    order=item.get('order', item_idx)
+                )

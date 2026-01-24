@@ -4,7 +4,7 @@ from rest_framework import generics, status, permissions
 
 from chat.v1 import res_msg
 from base.helpers.response import APIResponse
-from chat.helpers.model_testing import AIModelTesting
+from base.helpers.pagination import DynamicPagination
 
 from chat.models import Conversation, Message
 
@@ -19,7 +19,7 @@ class CreateMessage(generics.CreateAPIView):
     """API View to create new message"""
     RES_LANG = 'en'
     permission_classes = [permissions.AllowAny]
-    serializer_class = MessageCreateSerializer
+    serializer_class = MessageCreateSerializer  # No changes needed here!
     
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -43,25 +43,24 @@ class CreateMessage(generics.CreateAPIView):
             status=status.HTTP_201_CREATED
         )
 
-
 class ConversationList(generics.ListAPIView):
     """API View to get all conversation list"""
     RES_LANG = 'en'
     serializer_class = ConversationSerializer
     permission_classes = [permissions.IsAuthenticated]
+    pagination_class = DynamicPagination
     
     def get_queryset(self):
         return Conversation.objects.all()
         
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
-    
-        # Paginate if necessary (optional)
+
         page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
             return self.get_paginated_response(serializer.data)
-        
+
         serializer = self.get_serializer(queryset, many=True)
         
         return APIResponse.success(
@@ -84,7 +83,7 @@ class SingleConversation(generics.RetrieveAPIView):
         if not conversation_id:
             return Message.objects.none()
     
-        return Message.objects.filter(conversation_id=conversation_id).order_by('-created_at')
+        return Message.objects.filter(conversation_id=conversation_id).order_by('created_at')
     
     def retrieve(self, request, *args, **kwargs):
         conversation_id = self.kwargs.get('conversation_id')
@@ -133,12 +132,3 @@ class DeleteConversation(generics.DestroyAPIView):
             status=status.HTTP_204_NO_CONTENT
         )
 
-
-class AIModelTest(generics.CreateAPIView):
-    """API view to test AI model response"""
-
-    ai_model = AIModelTesting()
-    def create(self, request, *args, **kwargs):
-        user_query = request.data["user_query"]
-        response = self.ai_model.gemini_response(user_query=user_query)
-        return APIResponse.success(data=response)

@@ -1,6 +1,7 @@
 import random
 from django.core.mail import send_mail
 from django.contrib.auth import get_user_model
+from django.conf import settings
 
 from rest_framework import generics, permissions
 from rest_framework_simplejwt.views import TokenRefreshView
@@ -9,6 +10,7 @@ from rest_framework.status import (
     HTTP_205_RESET_CONTENT,
     HTTP_404_NOT_FOUND,
     HTTP_409_CONFLICT,
+    HTTP_401_UNAUTHORIZED,
 )
 
 from base.helpers.response import APIResponse
@@ -57,37 +59,102 @@ class CreateNewUser(generics.CreateAPIView):
 
 
 class Login(generics.GenericAPIView):
-    """
-    API view to login with email and password
-    """
-    RESPONSE_LANGUAGE = "en"
     serializer_class = LoginSerializer
+    RESPONSE_LANGUAGE = "en"
 
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        return APIResponse.success(
-            data = serializer.validated_data,
-            message = USER_LOGIN[self.RESPONSE_LANGUAGE],
+        access_token = serializer.context["access_token"]
+        refresh_token = serializer.context["refresh_token"]
+
+        response = APIResponse.success(
+            message=USER_LOGIN[self.RESPONSE_LANGUAGE],
         )
+
+        IS_PROD = not settings.DEBUG
+        cookie_domain = ".shahtaz.dev" if IS_PROD else None
+
+        response.set_cookie(
+            key="access_token",
+            value=access_token,
+            httponly=True,
+            secure=IS_PROD,
+            samesite="None" if IS_PROD else "Lax",
+            domain=cookie_domain,
+            path="/",
+        )
+
+        response.set_cookie(
+            key="refresh_token",
+            value=refresh_token,
+            httponly=True,
+            secure=IS_PROD,
+            samesite="None" if IS_PROD else "Lax",
+            domain=cookie_domain,
+            path="/",
+        )
+
+        return response
 
 
 class RefreshToken(TokenRefreshView):
-    """
-    API view to refresh JWT access token
-    """
     RESPONSE_LANGUAGE = "en"
-    def post(self, request, *args, **kwargs):
-        response = super().post(request, *args, **kwargs)
-        token_data = {
-            "access_token": response.data.get("access"),
-        }
 
-        return APIResponse.success(
-            data = token_data, 
-            message = USER_TOKEN_REFRESH[self.RESPONSE_LANGUAGE], 
+    def post(self, request, *args, **kwargs):
+        # Try to get from cookie first, then from body
+        refresh_token = request.COOKIES.get("refresh_token") or request.data.get("refresh")
+
+        if not refresh_token:
+            return APIResponse.error(
+                "Refresh token missing",
+                status=HTTP_401_UNAUTHORIZED
+            )
+
+        # Inject refresh token into request data
+        request.data["refresh"] = refresh_token
+
+        jwt_response = super().post(request, *args, **kwargs)
+
+        access_token = jwt_response.data.get("access")
+        new_refresh_token = jwt_response.data.get("refresh")
+
+        response = APIResponse.success(
+            message=USER_TOKEN_REFRESH[self.RESPONSE_LANGUAGE],
+            data={
+                "access_token": access_token,
+                "refresh_token": new_refresh_token,
+            }
         )
+
+        IS_PROD = not settings.DEBUG
+        cookie_domain = ".shahtaz.dev" if IS_PROD else None
+
+        response.set_cookie(
+            key="access_token",
+            value=access_token,
+            httponly=True,
+            secure=IS_PROD,
+            samesite="None" if IS_PROD else "Lax",
+            path="/",
+            domain=cookie_domain,
+            max_age=60 * 5,
+        )
+
+        if new_refresh_token:
+            response.set_cookie(
+                key="refresh_token",
+                value=new_refresh_token,
+                httponly=True,
+                secure=IS_PROD,
+                samesite="None" if IS_PROD else "Lax",
+                path="/",
+                domain=cookie_domain,
+                max_age=60 * 60 * 24 * 7,
+            )
+
+        return response
 
 
 class UserDetails(generics.GenericAPIView):

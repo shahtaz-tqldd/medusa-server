@@ -8,16 +8,12 @@ DJANGO_APPS = [
 ]
 
 THIRD_PARTY_APPS = [
+    'django_filters',
+    'corsheaders',
     'rest_framework',
     'rest_framework_simplejwt',
-    'django_filters',
+    'rest_framework_simplejwt.token_blacklist'
 ]
-
-REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-    )
-}
 
 DEVELOPED_APPS = [
     'base',

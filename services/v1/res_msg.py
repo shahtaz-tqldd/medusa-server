@@ -2,6 +2,10 @@ SERVICE_CREATED = {
     "en": "New Service Created!"
 }
 
+SERVICE_DETAILS = {
+    "en": "Service details received!"
+}
+
 SERVICE_LIST = {
     "en": "Service List received!"
 }
@@ -15,29 +19,24 @@ SERVICE_DELETED = {
 }
 
 # skills
-SKILL_CREATED = {
-    "en": "New Skills Created!"
+SKILL_NOT_FOUND = {
+    "en": "No skills and introduction found. Please create one."
 }
 
-SKILL_LIST = {
-    "en": "Skill List received!"
+SKILL_DETAILS = {
+    "en": "Skill and introduction details received!"
 }
 
 SKILL_UPDATED = {
-    "en": "Skill has been updated!"
-}
-
-SKILL_DELETED = {
-    "en": "Skill has been deleted!"
-}
-
-SKILL_LIST_EXPECTED = {
-    "en": "A list of skills expected!"
+    "en": "Skill and introduction updated!"
 }
 
 # work experiences message
 EXPERIENCE_CREATED = {
     "en": "New Experience Created!"
+}
+EXPERIENCE_DETAILS = {
+    "en": "Experience details retrieved successfully!"
 }
 
 EXPERIENCE_UPDATED = {
@@ -50,4 +49,24 @@ EXPERIENCE_LIST = {
 
 EXPERIENCE_DELETED = {
     "en": "Experience has been deleted!"
+}
+EXPERIENCE_NOT_FOUND = {
+    "en": "Experience not found with the id!"
+}
+
+# achievement message
+ACHIEVEMENT_CREATED = {
+    "en": "New Achievement Created!"
+}
+
+ACHIEVEMENT_UPDATED = {
+    "en": "Achievement updated successfully!"
+}
+
+ACHIEVEMENT_LIST = {
+    "en": "Achievement list received!"
+}
+
+ACHIEVEMENT_DELETE = {
+    "en": "Achievement has been deleted!"
 }

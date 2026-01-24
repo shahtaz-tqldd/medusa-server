@@ -1,43 +1,56 @@
 from django.urls import path, include
 from .views import (
     CreateNewService,
+    ServiceDetails,
     ServiceList,
-    UpdateServiceDetails,
+    UpdateService,
     DeleteService,
-    CreateNewSkills,
-    SkillList,
+    SkillDetailsView,
     UpdateSkillDetails,
-    DeleteSkill,
     CreateNewExperience,
     ExperienceList,
+    ExperienceDetails,
     UpdateExperienceDetails,
     DeleteExperience,
+    AchievementList,
+    CreateAchievement,
+    UpdateAchievement,
+    DeleteAchievement,
 )
 
-app_name = 'services'
+app_name = "services"
 
 service_urls = [
     path("", ServiceList.as_view(), name="service-list"),
+    path("<uuid:id>/", ServiceDetails.as_view(), name="service-details"),
     path("create/", CreateNewService.as_view(), name="create-service"),
-    path("update/<id>/", UpdateServiceDetails.as_view(), name="update-service"),
-    path("delete/<id>/", DeleteService.as_view(), name="delete-service"),
+    path("update/<uuid:id>/", UpdateService.as_view(), name="update-service"),
+    path("delete/<uuid:id>/", DeleteService.as_view(), name="delete-service"),
 ]
 
 skill_urls = [
-    path("", SkillList.as_view(), name="skill-list"),
-    path("create/", CreateNewSkills.as_view(), name="create-skill"),
-    path("update/<id>/", UpdateSkillDetails.as_view(), name="update-skill"),
-    path("delete/<id>/", DeleteSkill.as_view(), name="delete-skill"),
+    path("", SkillDetailsView.as_view(), name="skill-details"),
+    path("update/", UpdateSkillDetails.as_view(), name="update-skill"),
 ]
 
-experiences_urls = [
+experience_urls = [
     path("", ExperienceList.as_view(), name="experience-list"),
+    path("<uuid:id>/", ExperienceDetails.as_view(), name="experience-details"),
     path("create/", CreateNewExperience.as_view(), name="create-experience"),
-    path("update/<id>/", UpdateExperienceDetails.as_view(), name="update-experience"),
-    path("delete/<id>/", DeleteExperience.as_view(), name="delete-experience"),
+    path("update/<uuid:id>/", UpdateExperienceDetails.as_view(), name="update-experience"),
+    path("delete/<uuid:id>/", DeleteExperience.as_view(), name="delete-experience"),
 ]
 
-urlpatterns = service_urls + [
-    path('skills/', include(skill_urls)),
-    path('experience/', include(experiences_urls))
+achievement_urls = [
+    path("", AchievementList.as_view(), name="achievement-list"),
+    path("create/", CreateAchievement.as_view(), name="create-achievement"),
+    path("update/<uuid:id>/", UpdateAchievement.as_view(), name="update-achievement"),
+    path("delete/<uuid:id>/", DeleteAchievement.as_view(), name="delete-achievement"),
+]
+
+urlpatterns = [
+    path("", include(service_urls)),
+    path("skills/", include(skill_urls)),
+    path("experiences/", include(experience_urls)),
+    path("achievements/", include(achievement_urls)),
 ]
