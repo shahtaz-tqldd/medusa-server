@@ -70,3 +70,6 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 # media url
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR, 'media'
+
+# MEETING
+MEETING_LINK = os.getenv('MEETING_LINK', "https://calendly.com/shahtaz67")

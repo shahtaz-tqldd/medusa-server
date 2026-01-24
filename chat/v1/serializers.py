@@ -1,5 +1,6 @@
 from django.db import transaction
 from django.utils.translation import gettext_lazy as _
+from django.conf import settings
 
 from rest_framework import serializers
 
@@ -80,7 +81,11 @@ class MessageCreateSerializer(serializers.Serializer):
 
                     # Update conversation summary
                     conversation.summary = updated_summary
-                    conversation.save(update_fields=['summary'])
+                    # Detect meeting link mention
+                    if settings.MEETING_LINK in ai_response_text:
+                        conversation.is_meeting_scheduled = True
+
+                    conversation.save(update_fields=["summary", "is_meeting_scheduled"])
 
                     # Return in the format expected by your API view
                     return {
@@ -168,7 +173,7 @@ class ConversationSerializer(serializers.ModelSerializer):
             'last_message',
             'total_message',
             'summary',
-            'user',  # <- added here
+            'user',
         ]
 
     def get_last_message(self, obj):

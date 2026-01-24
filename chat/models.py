@@ -1,6 +1,5 @@
 import uuid
 from django.db import models
-from django.utils import timezone
 from chat.choices import MessageSenderChoice
 
 class Conversation(models.Model):
