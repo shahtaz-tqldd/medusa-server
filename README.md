@@ -104,7 +104,6 @@ Explore the full API documentation via Postman:
 
 👉 [Postman API Docs](https://documenter.getpostman.com/view/36267101/2sB2qZDh2w)
 
-
 ## ⚙️ Tech Stack
 
 * **Python 3**
