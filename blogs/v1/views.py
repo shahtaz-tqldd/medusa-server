@@ -5,6 +5,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 # restframework utils
 from rest_framework import generics, status
 from rest_framework.filters import SearchFilter, OrderingFilter
+from rest_framework.exceptions import NotFound
 from rest_framework.permissions import IsAuthenticated, AllowAny
 
 # models
@@ -144,7 +145,7 @@ class BlogDetails(generics.RetrieveAPIView):
             return blog
         
         except Blog.DoesNotExist:
-            raise ValueError(detail=res_msg.BLOG_NOT_FOUND[self.RES_LANG])
+            raise NotFound(detail=res_msg.BLOG_NOT_FOUND[self.RES_LANG])
     
     def retrieve(self, request, *args, **kwargs):
         try:
@@ -156,8 +157,11 @@ class BlogDetails(generics.RetrieveAPIView):
                 message=res_msg.BLOG_DETAILS[self.RES_LANG]
             )
         
-        except Blog.DoesNotExist:
-            return APIResponse.error(message=res_msg.BLOG_NOT_FOUND[self.RES_LANG])
+        except NotFound:
+            return APIResponse.error(
+                message=res_msg.BLOG_NOT_FOUND[self.RES_LANG],
+                status=status.HTTP_404_NOT_FOUND
+            )
 
 class UpdateBlogDetails(generics.UpdateAPIView):
     """API View to update blog with id"""
@@ -178,7 +182,7 @@ class UpdateBlogDetails(generics.UpdateAPIView):
             self.check_object_permissions(self.request, blog)
             return blog
         except Blog.DoesNotExist:
-            return APIResponse.error(message=res_msg.BLOG_NOT_FOUND[self.RES_LANG])
+            raise NotFound(detail=res_msg.BLOG_NOT_FOUND[self.RES_LANG])
     
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
@@ -216,10 +220,16 @@ class DeleteBlog(generics.DestroyAPIView):
             self.check_object_permissions(self.request, blog)
             return blog
         except Blog.DoesNotExist:
-            return APIResponse.error(message=res_msg.BLOG_NOT_FOUND[self.RES_LANG])
+            raise NotFound(detail=res_msg.BLOG_NOT_FOUND[self.RES_LANG])
     
     def destroy(self, request, *args, **kwargs):
-        instance = self.get_object()
+        try:
+            instance = self.get_object()
+        except NotFound:
+            return APIResponse.error(
+                message=res_msg.BLOG_NOT_FOUND[self.RES_LANG],
+                status=status.HTTP_404_NOT_FOUND
+            )
         
         # Delete content blocks first (to handle cascade properly)
         ContentBlock.objects.filter(blog=instance).delete()
