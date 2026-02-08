@@ -1,6 +1,7 @@
 from django.utils import timezone
 from django.db.models import F, Q
 from django_filters.rest_framework import DjangoFilterBackend
+import logging
 
 # restframework utils
 from rest_framework import generics, status
@@ -27,6 +28,8 @@ from blogs.v1 import res_msg
 from blogs.helpers.blog_filter import BlogFilter
 from base.helpers.pagination import CustomPagination
 from base.helpers.response import APIResponse
+
+logger = logging.getLogger(__name__)
 
 
 class CreateNewBlog(generics.CreateAPIView):
@@ -139,9 +142,17 @@ class BlogDetails(generics.RetrieveAPIView):
         try:
             blog = self.get_queryset().get(slug=lookup_value)
             if not self._is_admin_view():
-                Blog.objects.filter(slug=lookup_value).update(
-                    view_count=F('view_count') + 1
-                )
+                # Do not fail blog retrieval if the view counter update fails.
+                try:
+                    Blog.objects.filter(slug=lookup_value).update(
+                        view_count=F('view_count') + 1
+                    )
+                except Exception as exc:
+                    logger.exception(
+                        "Failed to increment view_count for blog slug=%s: %s",
+                        lookup_value,
+                        str(exc)
+                    )
             return blog
         
         except Blog.DoesNotExist:
